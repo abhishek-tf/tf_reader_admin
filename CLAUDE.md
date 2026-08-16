@@ -30,17 +30,25 @@ A console for the people who run the library, not for readers. Five screens:
 **34 admin operations exist.** They are listed in `.claude/context/api-contract-digest.md`. Read that
 before writing a fetch call; do not guess a path.
 
-## Four things about this API that will catch you out
+## Six things about this API that will catch you out
 
-1. **Two tokens.** `accessToken` is a JWT that lives 15 minutes. `refreshToken` is opaque and lives
-   12 hours. Store neither in `localStorage`; keep the access token in memory and let a refresh call
-   rebuild it after a reload.
-2. **Logout is immediate.** Every admin request re-checks its session, so a revoked token fails on the
-   next call. Expect one `401` after logout and handle it as "signed out", not as an error.
-3. **`version` is required when saving feed settings.** Send back the number you loaded. A `409
+1. **Two tokens, and a reload survives.** `accessToken` is a JWT kept **in memory only**, 15
+   minutes. The refresh token is an **`HttpOnly` cookie** named `adminRefresh` that no script can
+   read, so a page reload rebuilds the session by calling `/auth/refresh` with **no body** and
+   letting the browser present the cookie. Never put a token in `localStorage` or
+   `sessionStorage`; the pre-commit hook blocks it.
+2. **CSRF is on for refresh and logout, and exempt for login.** Spring writes a readable
+   `XSRF-TOKEN` cookie and expects it echoed back as an `X-XSRF-TOKEN` header. `src/api/client.js`
+   does this. **If a refresh or logout starts returning 403, this is why.**
+3. **Rotation never extends a session.** The new cookie's life is what is left of the original
+   twelve hours, so a busy operator is still signed out twelve hours after signing in.
+4. **Logout is immediate.** Every admin request re-checks its session, so a revoked token fails on
+   the next call, and logout clears the cookie. Expect one `401` after logout and handle it as
+   "signed out", not as an error.
+5. **`version` is required when saving feed settings.** Send back the number you loaded. A `409
 STALE_VERSION` means somebody else saved first: reload, reapply, save again. **Do not retry
    automatically**, or you will silently destroy their work.
-4. **Tier values are `OPEN_ACCESS`, `SUBSCRIPTION`, `ELITE`.** The same three everywhere. Show a
+6. **Tier values are `OPEN_ACCESS`, `SUBSCRIPTION`, `ELITE`.** The same three everywhere. Show a
    friendly label in the UI, but send and compare the real value.
 
 ## Errors

@@ -4,43 +4,71 @@ import { toApiError, ApiError } from './errors.js';
 // one origin, no CORS to configure, and no base URL to swap at build time.
 const BASE = '/api/admin/v1';
 
-// The access token lives in this module, in memory only.
+// Both tokens live in this module, in memory only.
 //
 // Not localStorage and not sessionStorage: an XSS reads both, and the pre-commit hook
 // blocks writing a token to either. The cost is that a page reload signs you out. That is
 // deliberate for the prototype. The proper fix is for the backend to set the refresh token
 // as an httpOnly cookie, which the browser cannot read at all.
+//
+// They sit here rather than in AuthContext because this file is what needs them: it attaches
+// the access token to every request, and trades the refresh token for a new one when the
+// access token expires.
 let accessToken = null;
+let refreshToken = null;
 
 // Called when the server says the session is over, so the app can show the login page.
 // Set once by AuthProvider. Kept as a callback rather than importing React state, so this
 // file stays plain JavaScript with no React dependency.
 let onAuthFailure = null;
 
-export function setAccessToken(token) {
-  accessToken = token;
+export function setTokens({ accessToken: access = null, refreshToken: refresh = null } = {}) {
+  accessToken = access;
+  refreshToken = refresh;
+}
+
+export function clearTokens() {
+  accessToken = null;
+  refreshToken = null;
 }
 
 export function getAccessToken() {
   return accessToken;
 }
 
+export function getRefreshToken() {
+  return refreshToken;
+}
+
 export function setAuthFailureHandler(fn) {
   onAuthFailure = fn;
 }
 
-/**
- * One request. Returns parsed JSON, or null for 204.
- * Throws ApiError for anything that is not 2xx, and for a network failure.
- *
- * On 401 it clears the token and calls the auth failure handler once, then still throws so
- * the caller knows the request did not happen.
- */
+// Spring writes its CSRF token to a readable `XSRF-TOKEN` cookie and expects it echoed back in
+// an `X-XSRF-TOKEN` header. Reading a cookie is one line and not worth a dependency.
+//
+// Deliberately readable, unlike the refresh cookie: the point of a CSRF token is that a script
+// on OUR origin can read it and a page on another origin cannot. It is not a secret, it is
+// proof of same-origin.
+function readCookie(name) {
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 /** Builds the headers for one request. Separate so `request` stays readable. */
-function buildHeaders(hasBody) {
+function buildHeaders(hasBody, method) {
   const headers = { Accept: 'application/json' };
   if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
   if (hasBody) headers['Content-Type'] = 'application/json';
+
+  // Only on the methods that change something, which is all Spring checks. Sending it before
+  // the backend enables CSRF is harmless: nothing reads it, and there is no cookie to read yet
+  // so the header is simply absent. That is what lets this land ahead of the backend change
+  // instead of in lockstep with it.
+  if (method !== 'GET' && method !== 'HEAD') {
+    const csrf = readCookie('XSRF-TOKEN');
+    if (csrf) headers['X-XSRF-TOKEN'] = csrf;
+  }
   return headers;
 }
 
@@ -61,13 +89,19 @@ async function parseBody(response) {
   }
 }
 
-async function request(method, path, { body, signal } = {}) {
+/** Sends one request and reads the answer. No token handling, no retry: that is `request`. */
+async function send(method, path, { body, signal }) {
   let response;
   try {
     response = await fetch(BASE + path, {
       method,
-      headers: buildHeaders(body !== undefined),
+      headers: buildHeaders(body !== undefined, method),
       body: body === undefined ? undefined : JSON.stringify(body),
+      // So the refresh cookie is sent once the backend sets one. `same-origin` rather than
+      // `include`, because the console is served from the same origin as the API: in dev via
+      // the Vite proxy, in production behind one host. `include` would additionally allow it
+      // cross-origin, which is a door there is no reason to open.
+      credentials: 'same-origin',
       signal,
     });
   } catch (cause) {
@@ -81,16 +115,103 @@ async function request(method, path, { body, signal } = {}) {
       path,
     });
   }
+  return { ok: response.ok, status: response.status, parsed: await parseBody(response) };
+}
 
-  const parsed = await parseBody(response);
-  if (response.ok) return parsed;
+// One refresh at a time, shared by every caller that is waiting on it.
+//
+// This is not an optimisation, it is the whole correctness of the thing. The server rotates
+// the refresh token on every use and treats a replay of an already-used token as a stolen
+// token, revoking the entire session. Two requests that both hit 401 must therefore wait on
+// ONE refresh rather than each sending the same token, or the second one signs the operator
+// out and loses their work.
+let refreshInFlight = null;
 
-  const error = toApiError(response.status, parsed, path);
+/**
+ * Trades the refresh token for a new pair. Answers true when there is a usable access token
+ * afterwards, false when the session is genuinely over. Never throws: the caller's own error
+ * is the one worth reporting.
+ */
+function refreshSession() {
+  if (refreshInFlight) return refreshInFlight;
+
+  // The token goes in the body while the backend still reads it from there. Once it reads the
+  // httpOnly cookie instead, this whole argument goes away and the browser supplies the token
+  // on its own: see docs/refresh-cookie-spec.md. Sending no body on a page load is what makes
+  // the change safe to land in either order, because a boot restore has nothing to send.
+  const presented = refreshToken;
+  refreshInFlight = send('POST', '/auth/refresh', {
+    body: presented === null ? undefined : { refreshToken: presented },
+  })
+    .then((result) => {
+      // Refresh returns a TokenPair and no user. Refreshing proves nothing new about who the
+      // caller is, so the signed-in operator in AuthContext is left exactly as it was.
+      if (!result.ok || !result.parsed?.accessToken) return false;
+      setTokens({
+        accessToken: result.parsed.accessToken,
+        refreshToken: result.parsed.refreshToken ?? null,
+      });
+      return true;
+    })
+    .catch(() => false)
+    .finally(() => {
+      refreshInFlight = null;
+    });
+
+  return refreshInFlight;
+}
+
+// A page load gets exactly one restore attempt, and this remembers it.
+//
+// StrictMode runs every effect twice in development. Without this the second run would present
+// a refresh token the first run has already spent, which is precisely the replay the server
+// treats as theft. Once per load is also simply correct: either the cookie was there or it
+// was not, and asking again cannot change the answer.
+let restoreAttempt = null;
+
+/**
+ * Rebuilds the session after a page load, from the refresh cookie the browser still holds.
+ *
+ * Answers true when there is a usable access token afterwards. Answers false when there is no
+ * session to restore, which is the ordinary case for somebody who has never signed in, and is
+ * not an error worth showing anybody.
+ *
+ * Until the backend sets the cookie this always answers false, because a fresh page has no
+ * refresh token in memory to send instead. That is why it fails quietly.
+ */
+export function restoreSession() {
+  if (restoreAttempt === null) restoreAttempt = refreshSession();
+  return restoreAttempt;
+}
+
+/**
+ * One request. Returns parsed JSON, or null for 204.
+ * Throws ApiError for anything that is not 2xx, and for a network failure.
+ *
+ * A 401 is usually just the fifteen-minute access token running out mid-session, so this
+ * refreshes once and sends the request again. If the refresh also fails the session really is
+ * over: the tokens are dropped, the auth failure handler runs, and the error is still thrown
+ * so the caller knows its request did not happen.
+ */
+async function request(method, path, { body, signal, allowRefresh = true } = {}) {
+  let result = await send(method, path, { body, signal });
+  if (result.ok) return result.parsed;
+
+  let error = toApiError(result.status, result.parsed, path);
+
+  // Gated on the ACCESS token, not the refresh token: it means "we thought we had a session,
+  // so a 401 is worth one refresh attempt". Gating on the refresh token would stop working the
+  // day it moves into an httpOnly cookie, because then this file cannot see it at all.
+  if (error.isAuthFailure && allowRefresh && accessToken !== null) {
+    if (await refreshSession()) {
+      result = await send(method, path, { body, signal });
+      if (result.ok) return result.parsed;
+      error = toApiError(result.status, result.parsed, path);
+    }
+  }
+
   if (error.isAuthFailure) {
-    // Go through the setter rather than assigning the module variable here. Assigning an
-    // outer-scope variable after an await is the pattern that produces a stale-value race,
-    // and ESLint's require-atomic-updates is right to object to it.
-    setAccessToken(null);
+    clearTokens();
     if (onAuthFailure) onAuthFailure();
   }
   throw error;

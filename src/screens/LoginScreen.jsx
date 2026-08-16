@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { useToast } from '../ui/ToastContext.jsx';
 import TextField from '../ui/TextField.jsx';
@@ -13,7 +13,7 @@ import FormActions from '../ui/FormActions.jsx';
  * message for all three rather than guessing which happened.
  */
 export default function LoginScreen() {
-  const { signIn, signingIn } = useAuth();
+  const { signIn, signingIn, signedIn, restoring } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -58,6 +58,16 @@ export default function LoginScreen() {
     }
   }
 
+  // Reloading while sitting on /login still restores the session, so do not show a sign in
+  // form to somebody who is already signed in. Computed during render rather than in an
+  // effect, because it is derived from state we already have.
+  if (restoring) {
+    return <p className="muted">Checking your session...</p>;
+  }
+  if (signedIn) {
+    return <Navigate to={location.state?.from ?? '/'} replace />;
+  }
+
   return (
     <div className="login-page">
       <form className="card login-card" onSubmit={handleSubmit} noValidate>
@@ -93,8 +103,8 @@ export default function LoginScreen() {
         />
 
         <p className="muted small">
-          A reload signs you out, because the token is held in memory rather than in browser
-          storage. That is deliberate for now.
+          A reload keeps you signed in for up to twelve hours. The access token is held in memory,
+          and the refresh token is an `HttpOnly` cookie no script can read.
         </p>
       </form>
     </div>

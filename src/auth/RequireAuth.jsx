@@ -12,8 +12,15 @@ import { useAuth } from './AuthContext.jsx';
  * straight back to login and traps the user in a loop.
  */
 export default function RequireAuth({ children }) {
-  const { signedIn } = useAuth();
+  const { signedIn, restoring } = useAuth();
   const location = useLocation();
+
+  // On a page load we do not yet know whether there is a session to restore. Redirecting
+  // during that gap is what makes a reload flash the login screen and then jump away again,
+  // so wait for the answer instead. It is one request, and usually invisible.
+  if (restoring) {
+    return <p className="muted">Checking your session...</p>;
+  }
 
   if (!signedIn) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
