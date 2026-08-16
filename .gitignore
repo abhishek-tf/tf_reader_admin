@@ -12,6 +12,10 @@ pnpm-debug.log*
 logs/
 *.log
 
+# The contribution log IS tracked. `*.log` above catches it otherwise, which makes
+# every /ship silently fail to record anything.
+!.contrib/*.log
+
 # ── editors ───────────────────────────────────────────────────────────────
 .idea/
 .vscode/
