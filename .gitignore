@@ -45,3 +45,6 @@ master-key*
 .env
 .env.local
 .env.*.local
+
+# temp folder
+temp/
