@@ -1,0 +1,19 @@
+# Build output and dependencies
+dist/
+node_modules/
+package-lock.json
+
+# GENERATED FILES. Prettier must not touch these.
+#
+# The digest is produced by a script in the backend repo. If Prettier reformats it here, the
+# next regeneration produces a diff against our reformatted copy, and the two repos churn
+# against each other forever.
+.claude/context/api-contract-digest.md
+CONTRIBUTIONS.md
+
+# Review output. Written by /pr-review, read once, never committed.
+.reviews/
+
+# Contribution log. Append-only, one line per commit, written by /ship.
+# Reformatting it would rewrite lines that are meant to be immutable.
+.contrib/

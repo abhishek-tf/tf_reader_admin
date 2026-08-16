@@ -1,0 +1,32 @@
+{
+  "name": "tf-reader-admin",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Operator console for the Taylor and Francis Reader. Frame only, no screens yet.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "verify": "npm run format:check && npm run lint && npm run build"
+  },
+  "dependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-router-dom": "6.28.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.17.0",
+    "@vitejs/plugin-react": "4.3.4",
+    "eslint": "9.17.0",
+    "eslint-plugin-react": "7.37.2",
+    "eslint-plugin-react-hooks": "5.1.0",
+    "globals": "15.14.0",
+    "prettier": "3.4.2",
+    "vite": "5.4.11"
+  }
+}

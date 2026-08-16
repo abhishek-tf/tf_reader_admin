@@ -1,0 +1,367 @@
+/* One stylesheet for the console.
+ *
+ * Plain CSS, no framework, per .claude/STYLE.md. Everything is driven by the variables in
+ * :root, so changing the look is one block rather than a hunt through files.
+ *
+ * Split this into CSS modules per component only when it stops being readable. It is about
+ * 250 lines and it is not there yet. */
+
+:root {
+  --bg: #f6f7f8;
+  --panel: #ffffff;
+  --ink: #17181a;
+  --muted: #6b7076;
+  --line: #d9dce0;
+  --accent: #003e74;
+  --ok: #10693f;
+  --ok-bg: #e7f4ec;
+  --bad: #a3231d;
+  --bad-bg: #fdeceb;
+  --radius: 4px;
+  --gap: 16px;
+  --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 14px/1.5 var(--sans);
+}
+
+h1 {
+  font-size: 20px;
+  margin: 0 0 4px;
+}
+h2 {
+  font-size: 15px;
+  margin: 0 0 4px;
+}
+
+.muted {
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+.small {
+  font-size: 12px;
+}
+.trace {
+  font: 11px var(--mono);
+  color: var(--muted);
+  margin: 4px 0 0;
+}
+
+/* ── shell: header on top, menu left, content right ───────────────────────── */
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap);
+  padding: 0 var(--gap);
+  height: 52px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+.head-name {
+  font-weight: 600;
+}
+.head-sub {
+  color: var(--muted);
+  font-weight: 400;
+}
+.head-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.head-who {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.2;
+}
+.head-role {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.side {
+  width: 200px;
+  flex-shrink: 0;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  padding: 12px 0;
+}
+.side ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.side a,
+.side-soon {
+  display: block;
+  padding: 8px 16px;
+  color: var(--ink);
+  text-decoration: none;
+  border-left: 3px solid transparent;
+}
+.side a:hover {
+  background: var(--bg);
+}
+.side a.side-on {
+  border-left-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+  background: var(--bg);
+}
+.side-soon {
+  color: var(--muted);
+  cursor: default;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  padding: var(--gap);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--gap);
+}
+
+/* ── login ────────────────────────────────────────────────────────────────── */
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: var(--gap);
+}
+.login-card {
+  width: 100%;
+  max-width: 360px;
+}
+
+/* ── form parts ───────────────────────────────────────────────────────────── */
+.field {
+  margin-bottom: 12px;
+}
+.field-label {
+  display: block;
+  font-weight: 600;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+.input {
+  width: 100%;
+  padding: 8px 10px;
+  font: inherit;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+.input:disabled {
+  background: var(--bg);
+  color: var(--muted);
+}
+.input-invalid {
+  border-color: var(--bad);
+}
+.field-error {
+  color: var(--bad);
+  font-size: 12px;
+  margin: 4px 0 0;
+}
+
+.form-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.btn {
+  padding: 8px 14px;
+  font: inherit;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+}
+.btn:hover:not(:disabled) {
+  background: var(--bg);
+}
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.15);
+}
+
+.row-buttons {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+/* ── table ────────────────────────────────────────────────────────────────── */
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table th,
+.table td {
+  text-align: left;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.table th {
+  background: var(--bg);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--muted);
+}
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+.th-sort {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+.table-state {
+  text-align: center;
+  color: var(--muted);
+  padding: 28px 12px;
+}
+.table-state-error {
+  color: var(--bad);
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid var(--line);
+}
+.badge-OPEN_ACCESS {
+  background: var(--ok-bg);
+  color: var(--ok);
+  border-color: var(--ok);
+}
+.badge-SUBSCRIPTION {
+  background: #eaf0f6;
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.badge-ELITE {
+  background: #fdf3e3;
+  color: #8a5a06;
+  border-color: #8a5a06;
+}
+
+/* ── messages ─────────────────────────────────────────────────────────────── */
+.toasts {
+  position: fixed;
+  right: var(--gap);
+  bottom: var(--gap);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 340px;
+  z-index: 50;
+}
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 12%);
+}
+.toast p {
+  margin: 0;
+}
+.toast-body {
+  flex: 1;
+}
+.toast-ok {
+  background: var(--ok-bg);
+  border-color: var(--ok);
+  color: var(--ok);
+}
+.toast-error {
+  background: var(--bad-bg);
+  border-color: var(--bad);
+  color: var(--bad);
+}
+.toast-close {
+  background: none;
+  border: 0;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  color: inherit;
+  padding: 0 2px;
+}
