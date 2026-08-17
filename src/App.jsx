@@ -2,7 +2,6 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import AppLayout from './layout/AppLayout.jsx';
 import RequireAuth from './auth/RequireAuth.jsx';
 import LoginScreen from './screens/LoginScreen.jsx';
-import FrameCheck from './screens/FrameCheck.jsx';
 import NotFound from './screens/NotFound.jsx';
 
 /**
@@ -27,7 +26,7 @@ export default function App() {
           </RequireAuth>
         }
       >
-        <Route path="/" element={<FrameCheck />} />
+        <Route path="/" element={<Navigate to="/publishers" replace />} />
         <Route path="*" element={<NotFound />} />
       </Route>
 

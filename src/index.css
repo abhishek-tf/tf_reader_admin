@@ -319,6 +319,32 @@ h2 {
   border-color: #8a5a06;
 }
 
+/* ── filter bar and pagination ───────────────────────────────────────────── */
+.filter-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.filter-bar-search {
+  flex: 1;
+  min-width: 200px;
+}
+.filter-bar-select {
+  width: auto;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+.pagination-status {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 /* ── messages ─────────────────────────────────────────────────────────────── */
 .toasts {
   position: fixed;
@@ -355,6 +381,11 @@ h2 {
   background: var(--bad-bg);
   border-color: var(--bad);
   color: var(--bad);
+}
+.toast-info {
+  background: #eaf0f6;
+  color: var(--accent);
+  border-color: var(--accent);
 }
 .toast-close {
   background: none;
