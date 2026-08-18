@@ -1,31 +1,31 @@
 /**
- * Previous/next paging for a list endpoint's `{ page, size, total }` response.
+ * Previous/next paging for a list, alongside a DataTable rather than inside it.
  *
- * Not a stub — there is no shared pagination control in the console yet, so this is a real,
- * small addition in the same shape as the console's other `ui/` primitives (plain props in,
- * the existing `.btn`/`.muted` classes for styling, nothing new introduced). `page` is zero
- * based, matching the API contract everywhere else in this app.
+ * `page` is zero based, matching the contract and `pageQuery()` in api/client.js.
  */
 export default function Pagination({ page, size, total, onPageChange }) {
-  const lastPage = Math.max(0, Math.ceil(total / size) - 1);
+  const totalPages = Math.max(1, Math.ceil(total / size));
+  const canPrev = page > 0;
+  const canNext = page + 1 < totalPages;
+
   return (
     <div className="pagination">
       <button
         type="button"
         className="btn"
-        disabled={page <= 0}
         onClick={() => onPageChange(page - 1)}
+        disabled={!canPrev}
       >
         Previous
       </button>
-      <span className="muted pagination-status">
-        Page {page + 1} of {lastPage + 1} ({total} total)
+      <span className="pagination-status">
+        Page {page + 1} of {totalPages} · {total} total
       </span>
       <button
         type="button"
         className="btn"
-        disabled={page >= lastPage}
         onClick={() => onPageChange(page + 1)}
+        disabled={!canNext}
       >
         Next
       </button>

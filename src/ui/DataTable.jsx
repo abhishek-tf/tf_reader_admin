@@ -3,11 +3,12 @@ import { useMemo, useState } from 'react';
 /**
  * One reusable table for the whole console.
  *
- * columns: [{ key, label, sortable, render }]
+ * columns: [{ key, label, sortable, render, width }]
  *   key      the field on the row, also the sort key sent to the API
  *   label    the heading the operator reads
  *   sortable optional, defaults to false
  *   render   optional (row) => node, for a badge or a formatted date
+ *   width    optional CSS width, so a column does not reflow between states
  *
  * Four states, and every screen gets all four for free:
  *   loading  a message instead of an empty table, so nobody thinks it broke
@@ -62,8 +63,6 @@ export default function DataTable({
     return active.direction === 'asc' ? ' ↑' : ' ↓';
   }
 
-  // One <colgroup> width per column keeps the layout steady between states, so the table
-  // does not jump when it goes from loading to rows.
   const body = () => {
     if (loading) {
       return (
@@ -110,6 +109,11 @@ export default function DataTable({
   return (
     <div className="table-wrap">
       <table className="table">
+        <colgroup>
+          {columns.map((column) => (
+            <col key={column.key} style={column.width ? { width: column.width } : undefined} />
+          ))}
+        </colgroup>
         <thead>
           <tr>
             {columns.map((column) => (
