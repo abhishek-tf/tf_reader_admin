@@ -3,6 +3,7 @@ import AppLayout from './layout/AppLayout.jsx';
 import RequireAuth from './auth/RequireAuth.jsx';
 import LoginScreen from './screens/LoginScreen.jsx';
 import NotFound from './screens/NotFound.jsx';
+import InstitutionsScreen from './screens/InstitutionsScreen.jsx';
 
 /**
  * Every address in the console.
@@ -26,7 +27,8 @@ export default function App() {
           </RequireAuth>
         }
       >
-        <Route path="/" element={<Navigate to="/publishers" replace />} />
+        <Route path="/" element={<FrameCheck />} />
+        <Route path="/institutions" element={<InstitutionsScreen />} />
         <Route path="*" element={<NotFound />} />
       </Route>
 

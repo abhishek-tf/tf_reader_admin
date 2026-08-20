@@ -396,3 +396,33 @@ h2 {
   color: inherit;
   padding: 0 2px;
 }
+/* ── added for Institutions: same variables, same badge/button conventions ──── */
+
+.badge-ACTIVE {
+  background: var(--ok-bg);
+  color: var(--ok);
+  border-color: var(--ok);
+}
+
+.badge-SUSPENDED {
+  background: #fdf3e3;
+  color: #8a5a06;
+  border-color: #8a5a06;
+}
+
+.badge-RETIRED {
+  background: var(--bg);
+  color: var(--muted);
+  border-color: var(--line);
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.pagination-status {
+  margin: 0;
+}
