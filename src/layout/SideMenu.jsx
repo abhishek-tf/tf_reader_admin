@@ -22,7 +22,6 @@ const ENTRIES = [
     to: '/institutions',
     label: 'Institutions',
     roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN'],
-    soon: true,
   },
   { to: '/shelves', label: 'Shelves', roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN'], soon: true },
   { to: '/operators', label: 'Operators', roles: ['SUPER_ADMIN'], soon: true },
