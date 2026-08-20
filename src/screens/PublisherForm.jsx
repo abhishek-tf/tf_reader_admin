@@ -100,7 +100,7 @@ export default function PublisherForm({ publisher = null, onSaved, onCancel }) {
           value={form.code}
           onChange={changeCode}
           error={errors.code}
-          placeholder="rtlg"
+          placeholder="RTLG"
           disabled={saving || editing}
           autoFocus
         />
