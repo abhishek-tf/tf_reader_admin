@@ -1,3 +1,5 @@
+import FieldLabel from './FieldLabel.jsx';
+
 /**
  * One dropdown, its label, and its validation message.
  *
@@ -14,21 +16,21 @@ export default function SelectField({
   error,
   placeholder = 'Choose one',
   disabled = false,
+  required = false,
 }) {
   const id = `field-${name}`;
   const errorId = `${id}-error`;
 
   return (
     <div className="field">
-      <label className="field-label" htmlFor={id}>
-        {label}
-      </label>
+      <FieldLabel id={id} label={label} required={required} />
       <select
         id={id}
         name={name}
         className={error ? 'input input-invalid' : 'input'}
         value={value}
         disabled={disabled}
+        required={required}
         onChange={(event) => onChange(name, event.target.value)}
         aria-invalid={error ? 'true' : undefined}
         aria-describedby={error ? errorId : undefined}
