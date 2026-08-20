@@ -14,12 +14,8 @@ import { api, pageQuery } from './client.js';
 // `status` is a RecordStatus: ACTIVE, SUSPENDED or RETIRED. Send the enum value, never a label.
 //
 // ── About the publisher code ─────────────────────────────────────────────────────────────
-// The team has settled this: publisher codes are UPPERCASE, matching the seeded data
-// (RTLG, CRCP). Note that PublisherWrite in wokay-api.yaml still documents
-// `pattern: '^[a-z0-9-]{2,40}$'`, so the YAML and the seed data disagree and the team has
-// chosen the seed. Nothing in this file lowercases, uppercases or validates a code: the
-// create form normalises what the operator types, and the server has the final say. Recorded
-// here because the next person to read the YAML will wonder.
+// Publisher codes must contain lowercase letters, digits and hyphens, 2–40 characters,
+// matching the PublisherWrite contract in wokay-api.yaml.
 //
 // No function here catches anything. Every failure arrives as the ApiError from errors.js,
 // and the screen decides whether it is a field message, a table error or a toast.

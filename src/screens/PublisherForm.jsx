@@ -31,7 +31,7 @@ export default function PublisherForm({ publisher = null, onSaved, onCancel }) {
 
   // Codes are uppercase on this project.
   function changeCode(name, value) {
-    change(name, value.toUpperCase());
+    change(name, value);
   }
 
   function validate() {
@@ -100,7 +100,7 @@ export default function PublisherForm({ publisher = null, onSaved, onCancel }) {
           value={form.code}
           onChange={changeCode}
           error={errors.code}
-          placeholder="RTLG"
+          placeholder="rtlg"
           disabled={saving || editing}
           autoFocus
         />
