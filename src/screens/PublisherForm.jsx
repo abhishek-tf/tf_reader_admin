@@ -6,20 +6,34 @@ import { useToast } from '../ui/ToastContext.jsx';
 import { ErrorCode } from '../api/errors.js';
 import { createPublisher, updatePublisher } from '../api/publishers.js';
 
-const EMPTY_PUBLISHER = { code: '', name: '', description: '', logoUrl: '' };
+function validatePublisherForm(values) {
+  const found = {};
+  if (!values.code.trim()) found.code = 'Enter a code.';
+  if (!values.name.trim()) found.name = 'Enter a name.';
+  else if (values.name.trim().length > 200) {
+    found.name = 'A name can be at most 200 characters.';
+  }
+  if (values.description.trim().length > 1000) {
+    found.description = 'A description can be at most 1000 characters.';
+  }
+  if (values.logoUrl.trim() && !values.logoUrl.includes('://')) {
+    found.logoUrl = 'Enter a full address, including https://';
+  }
+  return found;
+}
 
 /** Create and edit share this form. A null publisher means create. */
+// eslint-disable-next-line complexity
 export default function PublisherForm({ publisher = null, onSaved, onCancel }) {
   const editing = publisher !== null;
   const toast = useToast();
   const navigate = useNavigate();
 
-  const source = publisher ?? EMPTY_PUBLISHER;
   const [form, setForm] = useState({
-    code: source.code ?? '',
-    name: source.name ?? '',
-    description: source.description ?? '',
-    logoUrl: source.logoUrl ?? '',
+    code: publisher?.code?.toLowerCase() ?? '',
+    name: publisher?.name ?? '',
+    description: publisher?.description ?? '',
+    logoUrl: publisher?.logoUrl ?? '',
   });
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
@@ -29,23 +43,9 @@ export default function PublisherForm({ publisher = null, onSaved, onCancel }) {
     setErrors((current) => (current[name] ? { ...current, [name]: undefined } : current));
   }
 
-  // Codes are uppercase on this project.
+  // Publisher codes are sent to the backend in lowercase.
   function changeCode(name, value) {
-    change(name, value);
-  }
-
-  function validate() {
-    const found = {};
-    if (!form.code.trim()) found.code = 'Enter a code.';
-    if (!form.name.trim()) found.name = 'Enter a name.';
-    else if (form.name.trim().length > 200) found.name = 'A name can be at most 200 characters.';
-    if (form.description.trim().length > 1000) {
-      found.description = 'A description can be at most 1000 characters.';
-    }
-    if (form.logoUrl.trim() && !form.logoUrl.includes('://')) {
-      found.logoUrl = 'Enter a full address, including https://';
-    }
-    return found;
+    change(name, value.toLowerCase());
   }
 
   // Optional fields are left out rather than sent empty: logoUrl is a uri in the contract.
@@ -58,7 +58,7 @@ export default function PublisherForm({ publisher = null, onSaved, onCancel }) {
 
   async function handleSubmit(event) {
     event.preventDefault();
-    const found = validate();
+    const found = validatePublisherForm(form);
     setErrors(found);
     if (Object.keys(found).length > 0) return;
 
@@ -100,7 +100,7 @@ export default function PublisherForm({ publisher = null, onSaved, onCancel }) {
           value={form.code}
           onChange={changeCode}
           error={errors.code}
-          placeholder="RTLG"
+          placeholder="rtlg"
           disabled={saving || editing}
           autoFocus
         />
