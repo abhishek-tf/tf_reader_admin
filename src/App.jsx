@@ -4,6 +4,10 @@ import RequireAuth from './auth/RequireAuth.jsx';
 import LoginScreen from './screens/LoginScreen.jsx';
 import BooksScreen from './screens/BooksScreen.jsx';
 import InstitutionsScreen from './screens/InstitutionsScreen.jsx';
+import FrameCheck from './screens/FrameCheck.jsx';
+import PublishersScreen from './screens/PublishersScreen.jsx';
+import PublisherForm from './screens/PublisherForm.jsx';
+import PublisherDetailScreen from './screens/PublisherDetailScreen.jsx';
 import NotFound from './screens/NotFound.jsx';
 
 /**
@@ -31,6 +35,11 @@ export default function App() {
         <Route path="/" element={<Navigate to="/publishers" replace />} />
         <Route path="/institutions" element={<InstitutionsScreen />} />
         <Route path="/books" element={<BooksScreen />} />
+        <Route path="/frame-check" element={<FrameCheck />} />
+        <Route path="/publishers" element={<PublishersScreen />} />
+        <Route path="/publishers/new" element={<PublisherForm />} />
+        <Route path="/publishers/:publisherId" element={<PublisherDetailScreen />} />
+
         <Route path="*" element={<NotFound />} />
       </Route>
 
