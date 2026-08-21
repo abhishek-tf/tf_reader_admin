@@ -32,7 +32,6 @@ export default function App() {
           </RequireAuth>
         }
       >
-
         <Route path="/" element={<Navigate to="/publishers" replace />} />
         <Route path="/institutions" element={<InstitutionsScreen />} />
         <Route path="/books" element={<BooksScreen />} />
