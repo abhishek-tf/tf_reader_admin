@@ -21,6 +21,27 @@
   --gap: 16px;
   --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Taylor & Francis brand palette, per TF_BRAND_GUIDELINES_SHARED.md. Additive only: nothing
+   * above this line changes, so no existing screen is affected. Applied so far only to new
+   * screens that opt in (see .shelves-screen below) — the rest of the console is unchanged
+   * until a separate, team-wide retrofit. */
+  --brand-indigo: #002244;
+  --brand-ultramarine: #003cb2;
+  --brand-cornflower: #505aff;
+  --brand-vista: #91aaff;
+  --brand-carbon: #283857;
+  --brand-slate: #3c4e69;
+  --brand-cloud: #e9e9ec;
+  --brand-cornflower-neutral: #ebf0ff;
+  --brand-saffron: #eeaf00;
+  --brand-saffron-neutral: #fffacc;
+  --brand-mint-dark: #00786e;
+  --brand-mint-neutral: #ebfcf7;
+  --brand-coral-dark: #bf1b4f;
+  --brand-coral-neutral: #ffebf0;
+  --font-open-sans: 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-aleo: 'Aleo', Georgia, serif;
 }
 
 * {
@@ -433,4 +454,24 @@ h2 {
 
 .pagination-status {
   margin: 0;
+}
+
+/* ── brand guideline, scoped to the Shelves screen only ──────────────────────
+ * The rest of the console still uses the placeholder look above. Retrofitting every screen
+ * to the T&F palette is a separate, team-wide change, not something to do unilaterally here. */
+.shelves-screen {
+  font-family: var(--font-open-sans);
+}
+.shelves-screen h1,
+.shelves-screen h2 {
+  font-family: var(--font-aleo);
+  font-weight: 400;
+}
+.shelves-screen .btn-primary {
+  background: var(--brand-ultramarine);
+  border-color: var(--brand-ultramarine);
+}
+.shelves-screen .btn-primary:hover:not(:disabled) {
+  background: var(--brand-indigo);
+  border-color: var(--brand-indigo);
 }
