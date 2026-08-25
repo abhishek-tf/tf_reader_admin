@@ -189,7 +189,7 @@ export default function ShelvesScreen() {
   }
 
   return (
-    <div className="stack shelves-screen">
+    <div className="stack">
       <section className="card">
         <h1>Shelves</h1>
         <p className="muted">Curate the three shelves an institution&apos;s readers see first.</p>

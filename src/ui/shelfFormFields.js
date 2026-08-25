@@ -48,7 +48,7 @@ export function validate(form) {
   }
   form.shelves.forEach((shelf) => {
     if (!shelf.title.trim())
-      found[`${shelf.id}-title`] = 'Enter a title, or the shelf stays hidden either way.';
+      found[`${shelf.id}-title`] = 'Every shelf needs a title, even one with no books on it.';
     if (splitList(shelf.itemIdsText).length > 50)
       found[`${shelf.id}-items`] = 'Up to 50 items per shelf.';
   });
