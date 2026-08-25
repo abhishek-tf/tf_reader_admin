@@ -3,13 +3,8 @@ import { Link, useParams } from 'react-router-dom';
 import PublisherForm from './PublisherForm.jsx';
 import PublisherStatusActions from './PublisherStatusActions.jsx';
 import PublisherCollections from './PublisherCollections.jsx';
+import StatusBadge from '../ui/StatusBadge.jsx';
 import { getPublisher } from '../api/publishers.js';
-
-const STATUS_LABEL = {
-  ACTIVE: 'Active',
-  SUSPENDED: 'Suspended',
-  RETIRED: 'Retired',
-};
 
 export default function PublisherDetailScreen() {
   const { publisherId } = useParams();
@@ -92,7 +87,7 @@ export default function PublisherDetailScreen() {
           </Link>
           <h1>{publisher.name}</h1>
           <p className="muted">
-            {publisher.code} · {STATUS_LABEL[publisher.status] ?? publisher.status}
+            {publisher.code} · <StatusBadge status={publisher.status} />
           </p>
           {publisher.description ? <p>{publisher.description}</p> : null}
           {publisher.logoUrl ? (

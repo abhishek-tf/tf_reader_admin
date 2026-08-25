@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthContext.jsx';
 import { useToast } from '../ui/ToastContext.jsx';
 import TextField from '../ui/TextField.jsx';
 import FormActions from '../ui/FormActions.jsx';
+import logo from '../assets/tf-logo-indigo.svg';
 
 /**
  * Console sign in. POST /api/admin/v1/auth/login with an email and a password.
@@ -71,6 +72,7 @@ export default function LoginScreen() {
   return (
     <div className="login-page">
       <form className="card login-card" onSubmit={handleSubmit} noValidate>
+        <img src={logo} alt="Taylor & Francis" className="login-logo" />
         <h1>Sign in</h1>
         <p className="muted">Operator access to the TF Reader console.</p>
 

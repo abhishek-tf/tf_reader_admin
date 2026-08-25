@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import DataTable from '../ui/DataTable.jsx';
 import TextField from '../ui/TextField.jsx';
 import SelectField from '../ui/SelectField.jsx';
+import StatusBadge from '../ui/StatusBadge.jsx';
 import { listPublishers } from '../api/publishers.js';
 
 const STATUS_LABEL = {
@@ -21,7 +22,7 @@ const COLUMNS = [
     render: (row) => <Link to={`/publishers/${row.id}`}>{row.name}</Link>,
   },
   { key: 'code', label: 'Code' },
-  { key: 'status', label: 'Status', render: (row) => STATUS_LABEL[row.status] ?? row.status },
+  { key: 'status', label: 'Status', render: (row) => <StatusBadge status={row.status} /> },
   { key: 'collectionCount', label: 'Collections' },
   { key: 'itemCount', label: 'Books' },
 ];
