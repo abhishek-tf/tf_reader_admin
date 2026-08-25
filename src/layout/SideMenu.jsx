@@ -17,13 +17,13 @@ import { NavLink } from 'react-router-dom';
 const ENTRIES = [
   { to: '/', label: 'Frame check', roles: null },
   { to: '/publishers', label: 'Publishers', roles: ['SUPER_ADMIN', 'PUBLISHER_ADMIN'] },
-  { to: '/books', label: 'Books', roles: ['SUPER_ADMIN', 'PUBLISHER_ADMIN'], soon: true },
+  { to: '/books', label: 'Books', roles: ['SUPER_ADMIN', 'PUBLISHER_ADMIN'] },
   {
     to: '/institutions',
     label: 'Institutions',
     roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN'],
   },
-  { to: '/shelves', label: 'Shelves', roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN'], soon: true },
+  { to: '/shelves', label: 'Shelves', roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN'] },
   { to: '/operators', label: 'Operators', roles: ['SUPER_ADMIN'], soon: true },
   { to: '/audit', label: 'Audit log', roles: ['SUPER_ADMIN'], soon: true },
 ];

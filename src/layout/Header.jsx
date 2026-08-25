@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../auth/AuthContext.jsx';
+import logo from '../assets/tf-logo-indigo.svg';
 
 // SUPER_ADMIN is not a phrase to show an operator.
 const ROLE_LABEL = {
@@ -31,8 +32,11 @@ export default function Header() {
 
   return (
     <header className="head">
-      <div className="head-name">
-        TF Reader <span className="head-sub">admin console</span>
+      <div className="head-brand">
+        <img src={logo} alt="Taylor & Francis" className="head-logo" />
+        <div className="head-name">
+          TF Reader <span className="head-sub">admin console</span>
+        </div>
       </div>
       <div className="head-right">
         {user ? (

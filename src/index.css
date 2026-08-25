@@ -7,20 +7,43 @@
  * 250 lines and it is not there yet. */
 
 :root {
-  --bg: #f6f7f8;
-  --panel: #ffffff;
-  --ink: #17181a;
-  --muted: #6b7076;
-  --line: #d9dce0;
-  --accent: #003e74;
-  --ok: #10693f;
-  --ok-bg: #e7f4ec;
-  --bad: #a3231d;
-  --bad-bg: #fdeceb;
+  /* Taylor & Francis brand palette, per TF_BRAND_GUIDELINES_SHARED.md. The semantic variables
+   * below (--bg, --ink, --accent, etc.) carry the brand colours now, so every screen picks
+   * this up automatically through the variables it already uses — nothing else needed to
+   * change. The --brand-* names stay available for anywhere that wants a specific palette
+   * colour by name rather than by semantic role. */
+  --bg: #ebf0ff; /* Cornflower Neutral */
+  --panel: #ffffff; /* White */
+  --ink: #283857; /* Carbon */
+  --muted: #3c4e69; /* Slate */
+  --line: #e9e9ec; /* Cloud */
+  --accent: #002244; /* Indigo */
+  --ok: #00786e; /* Mint Dark */
+  --ok-bg: #ebfcf7; /* Mint Neutral */
+  --bad: #bf1b4f; /* Coral Dark */
+  --bad-bg: #ffebf0; /* Coral Neutral */
   --radius: 4px;
   --gap: 16px;
-  --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --sans: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --brand-indigo: #002244;
+  --brand-ultramarine: #003cb2;
+  --brand-cornflower: #505aff;
+  --brand-vista: #91aaff;
+  --brand-carbon: #283857;
+  --brand-slate: #3c4e69;
+  --brand-cloud: #e9e9ec;
+  --brand-cornflower-neutral: #ebf0ff;
+  --brand-saffron: #eeaf00;
+  --brand-saffron-neutral: #fffacc;
+  --brand-mint-dark: #00786e;
+  --brand-mint-neutral: #ebfcf7;
+  --brand-coral-dark: #bf1b4f;
+  --brand-coral-neutral: #ffebf0;
+  --font-open-sans: 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-aleo: 'Aleo', Georgia, serif;
 }
 
 * {
@@ -43,10 +66,14 @@ body {
 h1 {
   font-size: 20px;
   margin: 0 0 4px;
+  font-family: var(--font-aleo);
+  font-weight: 400;
 }
 h2 {
   font-size: 15px;
   margin: 0 0 4px;
+  font-family: var(--font-aleo);
+  font-weight: 400;
 }
 
 .muted {
@@ -80,12 +107,22 @@ h2 {
   justify-content: space-between;
   gap: var(--gap);
   padding: 0 var(--gap);
-  height: 52px;
+  height: 60px;
   background: var(--panel);
   border-bottom: 1px solid var(--line);
 }
+.head-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.head-logo {
+  /* Master logo, digital minimum height per brand guidelines is 45px. */
+  height: 45px;
+  width: auto;
+}
 .head-name {
-  font-weight: 600;
+  font-weight: 700;
 }
 .head-sub {
   color: var(--muted);
@@ -113,37 +150,43 @@ h2 {
   min-height: 0;
 }
 
+/* Dark side nav, taking inspiration from the T&F brand guidelines site itself: an Indigo
+ * background with a light wordmark-adjacent text colour and a Cornflower pill behind the
+ * current section, rather than a light panel with a left accent bar. */
 .side {
   width: 200px;
   flex-shrink: 0;
-  background: var(--panel);
-  border-right: 1px solid var(--line);
-  padding: 12px 0;
+  background: var(--brand-indigo);
+  padding: 12px 8px;
 }
 .side ul {
   list-style: none;
   margin: 0;
   padding: 0;
 }
+.side li {
+  margin-bottom: 2px;
+}
 .side a,
 .side-soon {
   display: block;
-  padding: 8px 16px;
-  color: var(--ink);
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: var(--brand-cornflower-neutral);
   text-decoration: none;
-  border-left: 3px solid transparent;
 }
 .side a:hover {
-  background: var(--bg);
+  background: rgb(255 255 255 / 10%);
+  color: #fff;
 }
 .side a.side-on {
-  border-left-color: var(--accent);
-  color: var(--accent);
-  font-weight: 600;
-  background: var(--bg);
+  background: rgb(255 255 255 / 12%);
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 700;
 }
 .side-soon {
-  color: var(--muted);
+  color: rgb(255 255 255 / 35%);
   cursor: default;
 }
 
@@ -178,6 +221,11 @@ h2 {
   width: 100%;
   max-width: 360px;
 }
+.login-logo {
+  height: 45px;
+  width: auto;
+  margin-bottom: 16px;
+}
 
 /* ── form parts ───────────────────────────────────────────────────────────── */
 .field {
@@ -185,7 +233,7 @@ h2 {
 }
 .field-label {
   display: block;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 12px;
   margin-bottom: 4px;
 }
@@ -277,8 +325,6 @@ h2 {
 .table th {
   background: var(--bg);
   font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
   color: var(--muted);
 }
 .table tbody tr:last-child td {
@@ -290,8 +336,6 @@ h2 {
   padding: 0;
   font: inherit;
   color: inherit;
-  text-transform: inherit;
-  letter-spacing: inherit;
   cursor: pointer;
 }
 .table-state {
@@ -305,11 +349,11 @@ h2 {
 
 .badge {
   display: inline-block;
-  padding: 2px 8px;
-  border-radius: 10px;
+  padding: 3px 10px;
+  border-radius: 6px;
   font-size: 11px;
-  font-weight: 600;
-  border: 1px solid var(--line);
+  font-weight: 700;
+  border: 1.5px solid var(--line);
 }
 .badge-OPEN_ACCESS {
   background: var(--ok-bg);
@@ -317,14 +361,14 @@ h2 {
   border-color: var(--ok);
 }
 .badge-SUBSCRIPTION {
-  background: #eaf0f6;
+  background: var(--brand-cornflower-neutral);
   color: var(--accent);
   border-color: var(--accent);
 }
 .badge-ELITE {
-  background: #fdf3e3;
-  color: #8a5a06;
-  border-color: #8a5a06;
+  background: var(--brand-saffron-neutral);
+  color: var(--brand-carbon);
+  border-color: var(--brand-saffron);
 }
 
 /* ── filter bar and pagination ───────────────────────────────────────────── */
@@ -391,7 +435,7 @@ h2 {
   color: var(--bad);
 }
 .toast-info {
-  background: #eaf0f6;
+  background: var(--brand-cornflower-neutral);
   color: var(--accent);
   border-color: var(--accent);
 }
@@ -413,15 +457,27 @@ h2 {
 }
 
 .badge-SUSPENDED {
-  background: #fdf3e3;
-  color: #8a5a06;
-  border-color: #8a5a06;
+  background: var(--brand-saffron-neutral);
+  color: var(--brand-carbon);
+  border-color: var(--brand-saffron);
 }
 
 .badge-RETIRED {
   background: var(--bg);
   color: var(--muted);
   border-color: var(--line);
+}
+
+.badge-PENDING {
+  background: var(--brand-saffron-neutral);
+  color: var(--brand-carbon);
+  border-color: var(--brand-saffron);
+}
+
+.badge-REVOKED {
+  background: var(--bad-bg);
+  color: var(--bad);
+  border-color: var(--bad);
 }
 
 .pagination {
