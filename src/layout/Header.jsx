@@ -10,12 +10,15 @@ const ROLE_LABEL = {
 };
 
 /**
- * The header: product name, who is signed in, and sign out.
+ * The header: the menu toggle, product name, who is signed in, and sign out.
+ *
+ * The toggle lives here rather than inside the menu it controls, because the menu collapses
+ * to nothing and a button inside it would collapse with it, leaving no way back.
  *
  * Sign out is disabled while it is running, because a second click during the request would
  * fire a second revoke against a token that is already gone.
  */
-export default function Header() {
+export default function Header({ menuCollapsed = false, onToggleMenu }) {
   const { user, signOut } = useAuth();
   const [signingOut, setSigningOut] = useState(false);
 
@@ -33,6 +36,19 @@ export default function Header() {
   return (
     <header className="head">
       <div className="head-brand">
+        {onToggleMenu ? (
+          <button
+            type="button"
+            className="menu-toggle"
+            onClick={onToggleMenu}
+            aria-expanded={!menuCollapsed}
+            aria-controls="side-menu"
+            aria-label={menuCollapsed ? 'Show the menu' : 'Hide the menu'}
+            title={menuCollapsed ? 'Show the menu' : 'Hide the menu'}
+          >
+            <span aria-hidden="true">☰</span>
+          </button>
+        ) : null}
         <img src={logo} alt="Taylor & Francis" className="head-logo" />
         <div className="head-name">
           TF Reader <span className="head-sub">admin console</span>

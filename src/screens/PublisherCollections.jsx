@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import DataTable from '../ui/DataTable.jsx';
-import CollectionForm from './CollectionForm.jsx';
 import { listCollections } from '../api/collections.js';
 
 // Not sortable: the contract's collections list takes no sort parameter.
@@ -48,25 +48,26 @@ export default function PublisherCollections({ publisherId }) {
   const rows = result.items;
 
   return (
-    <>
-      <section className="card">
+    <section className="card">
+      <div className="row-buttons" style={{ justifyContent: 'space-between' }}>
         <h2>Collections</h2>
-        <DataTable
-          columns={COLUMNS}
-          rows={rows}
-          loading={loading}
-          error={error}
-          emptyMessage="No collections yet."
-          onRetry={reload}
-        />
-        {result.total > rows.length ? (
-          <p className="muted small">
-            Showing the first {rows.length} of {result.total}.
-          </p>
-        ) : null}
-      </section>
-
-      <CollectionForm publisherId={publisherId} onCreated={reload} />
-    </>
+        <Link className="btn btn-primary" to={`/publishers/${publisherId}/collections/new`}>
+          New collection
+        </Link>
+      </div>
+      <DataTable
+        columns={COLUMNS}
+        rows={rows}
+        loading={loading}
+        error={error}
+        emptyMessage="No collections yet."
+        onRetry={reload}
+      />
+      {result.total > rows.length ? (
+        <p className="muted small">
+          Showing the first {rows.length} of {result.total}.
+        </p>
+      ) : null}
+    </section>
   );
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import DataTable from '../ui/DataTable.jsx';
+import KeyValueList from '../ui/KeyValueList.jsx';
 import Pagination from '../ui/Pagination.jsx';
 import TextField from '../ui/TextField.jsx';
 import SelectField from '../ui/SelectField.jsx';
@@ -19,19 +20,40 @@ const EMPTY_FILTERS = {
 const ACTION_LABEL = Object.fromEntries(ACTION_OPTIONS.map((o) => [o.value, o.label]));
 
 /**
- * One of before, after or meta. Free-form objects, so there is nothing to lay out field by
- * field: the compact JSON is the honest rendering, and a null one is not an error.
+ * One of before, after or meta, as a list of key and value rather than one JSON blob.
+ *
+ * `before` and `after` carry only the fields that CHANGED, not the whole document either
+ * side, so these lists are short and reading them field by field is what an operator wants.
+ *
+ * A leaf that is itself an object or an array is still stringified: there is no fixed shape
+ * to lay out, and flattening a nested object into more rows would invent a key like
+ * `branding.logoUrl` that appears nowhere in the record. Null is not an error, and neither is
+ * an object with no keys — the backend writes one when an action changed nothing.
  */
-function renderJson(value) {
+function renderKeyValues(value) {
   if (value === null || value === undefined) return '—';
-  return <span className="trace">{JSON.stringify(value)}</span>;
+  if (typeof value !== 'object' || Array.isArray(value)) {
+    return <span className="trace">{JSON.stringify(value)}</span>;
+  }
+
+  const pairs = Object.entries(value).map(([key, entry]) => [
+    key,
+    typeof entry === 'string' ? entry : JSON.stringify(entry),
+  ]);
+  if (pairs.length === 0) return '—';
+
+  return <KeyValueList pairs={pairs} />;
 }
 
+// The widths add up to 100%. The five identifying columns are deliberately tight, because
+// before/after/meta hold key and value pairs and are the reason anybody opens this screen:
+// left to share whatever the others did not claim, they got about 14% each and wrapped every
+// value onto its own line.
 const COLUMNS = [
   {
     key: 'at',
     label: 'Date and time',
-    width: '15%',
+    width: '12%',
     // No date helper exists in this console yet, and one screen does not justify inventing one.
     // The exact instant stays on the title, because that is what a filter has to be given.
     render: (row) => <span title={row.at}>{new Date(row.at).toLocaleString()}</span>,
@@ -39,29 +61,30 @@ const COLUMNS = [
   {
     key: 'actorEmail',
     label: 'Actor',
-    width: '14%',
+    width: '12%',
     // The email is the readable one, but it is nullable, and so is the id behind it.
     render: (row) => row.actorEmail ?? row.actorId ?? '—',
   },
   {
     key: 'action',
     label: 'Action',
-    width: '9%',
+    width: '8%',
     render: (row) => ACTION_LABEL[row.action] ?? row.action,
   },
   // No render: the exact value the backend returned, straight through. DataTable already
   // falls back to an em dash for a null one, and the contract names no display label for an
   // entityType, so there is nothing correct to map it to.
-  { key: 'entityType', label: 'Entity type', width: '10%' },
+  { key: 'entityType', label: 'Entity type', width: '9%' },
   {
     key: 'entityId',
+    // An id is short and monospace, so it does not need the width the heading suggests.
     label: 'Entity ID',
-    width: '10%',
+    width: '8%',
     render: (row) => <span className="trace">{row.entityId ?? '—'}</span>,
   },
-  { key: 'before', label: 'Before', render: (row) => renderJson(row.before) },
-  { key: 'after', label: 'After', render: (row) => renderJson(row.after) },
-  { key: 'meta', label: 'Metadata', render: (row) => renderJson(row.meta) },
+  { key: 'before', label: 'Before', width: '17%', render: (row) => renderKeyValues(row.before) },
+  { key: 'after', label: 'After', width: '17%', render: (row) => renderKeyValues(row.after) },
+  { key: 'meta', label: 'Metadata', width: '17%', render: (row) => renderKeyValues(row.meta) },
 ];
 
 /** The audit trail: six filters over a paged, read-only, newest-first table. */

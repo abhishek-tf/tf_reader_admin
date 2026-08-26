@@ -1,20 +1,15 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import DataTable from '../ui/DataTable';
+import FilterBar from '../ui/FilterBar';
 import Pagination from '../ui/Pagination';
-import SelectField from '../ui/SelectField';
 import StatusBadge from '../ui/StatusBadge';
 import TextField from '../ui/TextField';
 import { useToast } from '../ui/ToastContext';
-import InstitutionForm from '../screens/InstitutionForm';
 import InstitutionSummaryPanel from '../screens/InstitutionSummaryPanel';
 import { useInstitutions } from '../screens/useInstitutions';
-import {
-  createInstitution,
-  getInstitution,
-  setInstitutionStatus,
-  updateInstitution,
-} from '../api/institution';
+import { getInstitution, setInstitutionStatus } from '../api/institution';
 
 const STATUS_OPTIONS = [
   { value: 'ACTIVE', label: 'Active' },
@@ -22,12 +17,11 @@ const STATUS_OPTIONS = [
   { value: 'RETIRED', label: 'Retired' },
 ];
 
-/** The institutions page: a filterable list, a create/edit form, and a detail panel. */
+/** The institutions page: a filterable list and a detail panel. Create and edit are pages. */
 export default function InstitutionsScreen() {
   const list = useInstitutions();
   const toast = useToast();
   const [selected, setSelected] = useState(null);
-  const [editing, setEditing] = useState(false); // false, 'create', or 'edit'
   const [pendingStatusIds, setPendingStatusIds] = useState(() => new Set());
   // The row a Suspend/Reactivate click is waiting to be confirmed for, plus the reason text typed
   // so far. Not a window.prompt: a native browser prompt is silently blocked (returns null with
@@ -41,25 +35,6 @@ export default function InstitutionsScreen() {
     } catch (e) {
       toast.failed(e);
       setSelected(row);
-    }
-  }
-
-  async function handleFormSubmit(payload) {
-    try {
-      if (selected && editing === 'edit') {
-        const updated = await updateInstitution(selected.id, payload);
-        setSelected(updated);
-        list.patchRow(updated.id, updated);
-      } else {
-        const created = await createInstitution(payload);
-        setSelected(created);
-        await list.reload();
-      }
-      toast.saved();
-      setEditing(false);
-    } catch (e) {
-      toast.failed(e);
-      throw e; // let InstitutionForm re-enable itself and, for CODE_TAKEN, show the field error
     }
   }
 
@@ -130,39 +105,30 @@ export default function InstitutionsScreen() {
       <section className="card">
         <div className="row-buttons" style={{ justifyContent: 'space-between' }}>
           <h1>Institutions</h1>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => {
-              setSelected(null);
-              setEditing('create');
-            }}
-          >
+          <Link className="btn btn-primary" to="/institutions/new">
             New institution
-          </button>
+          </Link>
         </div>
 
-        <div className="row-buttons">
-          <input
-            type="text"
-            className="input"
-            style={{ maxWidth: 280 }}
-            value={list.q}
-            onChange={(e) => list.setQ(e.target.value)}
-            placeholder="Search by name"
-            aria-label="Search by name"
-          />
-          <div style={{ minWidth: 200 }}>
-            <SelectField
-              label="Status"
-              name="status"
-              value={list.status}
-              onChange={(_name, value) => list.setStatus(value)}
-              options={STATUS_OPTIONS}
-              placeholder="All statuses"
-            />
-          </div>
-        </div>
+        {/* FilterBar, not a bare input beside a SelectField: SelectField brings a label and a
+            .field wrapper while the search box had neither, which left the two on different
+            baselines and stretched the box to the taller one's height. Books uses the same
+            control, so the two list screens now filter the same way. */}
+        <FilterBar
+          searchValue={list.q}
+          onSearchChange={list.setQ}
+          searchPlaceholder="Search by name"
+          filters={[
+            {
+              name: 'status',
+              label: 'Status',
+              value: list.status,
+              options: STATUS_OPTIONS,
+              placeholder: 'All statuses',
+              onChange: list.setStatus,
+            },
+          ]}
+        />
 
         <DataTable
           columns={columns}
@@ -206,26 +172,12 @@ export default function InstitutionsScreen() {
         </section>
       )}
 
-      {editing && (
-        <section className="card">
-          <InstitutionForm
-            // Forces a fresh form instance (and fresh internal state) whenever the underlying
-            // institution changes, so clicking a different row while the form is open can never
-            // leave the previous institution's values on screen.
-            key={editing === 'edit' ? selected?.id : 'create'}
-            initial={editing === 'edit' ? selected : null}
-            onSubmit={handleFormSubmit}
-            onCancel={() => setEditing(false)}
-          />
-        </section>
-      )}
-
-      {!editing && selected && (
+      {selected && (
         <section className="card">
           <InstitutionSummaryPanel institution={selected} />
-          <button type="button" className="btn" onClick={() => setEditing('edit')}>
+          <Link className="btn" to={`/institutions/${selected.id}/edit`}>
             Edit
-          </button>
+          </Link>
         </section>
       )}
     </div>
