@@ -9,6 +9,8 @@ import FrameCheck from './screens/FrameCheck.jsx';
 import PublishersScreen from './screens/PublishersScreen.jsx';
 import PublisherForm from './screens/PublisherForm.jsx';
 import PublisherDetailScreen from './screens/PublisherDetailScreen.jsx';
+import OperatorsScreen from './screens/OperatorsScreen.jsx';
+import AuditLogsScreen from './screens/AuditLogsScreen.jsx';
 import NotFound from './screens/NotFound.jsx';
 
 /**
@@ -41,6 +43,8 @@ export default function App() {
         <Route path="/publishers" element={<PublishersScreen />} />
         <Route path="/publishers/new" element={<PublisherForm />} />
         <Route path="/publishers/:publisherId" element={<PublisherDetailScreen />} />
+        <Route path="/operators" element={<OperatorsScreen />} />
+        <Route path="/audit" element={<AuditLogsScreen />} />
 
         <Route path="*" element={<NotFound />} />
       </Route>
