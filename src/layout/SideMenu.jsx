@@ -15,7 +15,7 @@ import { NavLink } from 'react-router-dom';
  * console is visible without pretending a screen is there.
  */
 const ENTRIES = [
-  { to: '/', label: 'Frame check', roles: null },
+  { to: '/frame-check', label: 'Frame check', roles: null },
   { to: '/publishers', label: 'Publishers', roles: ['SUPER_ADMIN', 'PUBLISHER_ADMIN'] },
   { to: '/books', label: 'Books', roles: ['SUPER_ADMIN', 'PUBLISHER_ADMIN'] },
   {
@@ -24,8 +24,8 @@ const ENTRIES = [
     roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN'],
   },
   { to: '/shelves', label: 'Shelves', roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN'] },
-  { to: '/operators', label: 'Operators', roles: ['SUPER_ADMIN'], soon: true },
-  { to: '/audit', label: 'Audit log', roles: ['SUPER_ADMIN'], soon: true },
+  { to: '/operators', label: 'Operators', roles: ['SUPER_ADMIN'] },
+  { to: '/audit', label: 'Audit log', roles: ['SUPER_ADMIN'] },
 ];
 
 export default function SideMenu({ role }) {
