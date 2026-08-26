@@ -116,6 +116,28 @@ h2 {
   align-items: center;
   gap: 12px;
 }
+.menu-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--ink);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.menu-toggle:hover {
+  background: var(--bg);
+}
+.menu-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
 .head-logo {
   /* Master logo, digital minimum height per brand guidelines is 45px. */
   height: 45px;
@@ -158,6 +180,14 @@ h2 {
   flex-shrink: 0;
   background: var(--brand-indigo);
   padding: 12px 8px;
+}
+/* Collapsed to nothing rather than to a narrow rail: the entries are words, not icons, so a
+ * rail would have nothing to put in it. The padding goes too, or it would hold the menu open
+ * at 16px. The toggle that brings it back is in the header. */
+.side-collapsed {
+  width: 0;
+  padding-left: 0;
+  padding-right: 0;
 }
 .side ul {
   list-style: none;
@@ -347,6 +377,35 @@ h2 {
   color: var(--bad);
 }
 
+/* Key and value pairs inside a table cell, for the audit trail's before/after/metadata.
+ * The key column sizes itself to the longest key rather than being fixed, so a record with
+ * one short key does not leave a wide empty gutter. */
+.kv {
+  margin: 0;
+  display: grid;
+  gap: 2px;
+}
+.kv-row {
+  display: grid;
+  /* `auto`, not `minmax(0, max-content)`: the latter lets the key track shrink below the key
+   * itself, which pushed the text out of its own column in a narrow cell. */
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+}
+.kv-key {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.kv-value {
+  margin: 0;
+  /* `break-word`, not `anywhere`. Both break a token too long for the line, but `anywhere`
+   * also counts those break points when the browser works out the column's minimum width,
+   * so the table was free to squeeze this column down to one character per line. */
+  overflow-wrap: break-word;
+}
+
 .badge {
   display: inline-block;
   padding: 3px 10px;
@@ -486,7 +545,6 @@ h2 {
   background: var(--bg);
   color: var(--muted);
   border-color: var(--line);
-
 }
 
 .pagination {

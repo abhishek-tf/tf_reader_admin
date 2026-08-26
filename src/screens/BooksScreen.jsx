@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import DataTable from '../ui/DataTable.jsx';
 import Pagination from '../ui/Pagination.jsx';
 import FilterBar from '../ui/FilterBar.jsx';
-import BookForm from '../ui/BookForm.jsx';
 import { listCatalogueItems } from '../api/catalogueItems.js';
 
 const PAGE_SIZE = 20;
@@ -36,8 +36,6 @@ export default function BooksScreen() {
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [page, setPage] = useState(0);
   const [list, setList] = useState({ items: [], total: 0, loading: true, error: null });
-  // null: no form. 'new': create. Otherwise the row being edited.
-  const [editingItem, setEditingItem] = useState(null);
 
   function load(signal) {
     setList((current) => ({ ...current, loading: true, error: null }));
@@ -61,11 +59,6 @@ export default function BooksScreen() {
   function updateFilters(patch) {
     setFilters((current) => ({ ...current, ...patch }));
     setPage(0);
-  }
-
-  function handleSaved() {
-    setEditingItem(null);
-    load();
   }
 
   const columns = [
@@ -99,9 +92,9 @@ export default function BooksScreen() {
       key: 'actions',
       label: '',
       render: (row) => (
-        <button type="button" className="btn" onClick={() => setEditingItem(row)}>
+        <Link className="btn" to={`/books/${row.id}/edit`}>
           Edit
-        </button>
+        </Link>
       ),
     },
   ];
@@ -112,9 +105,9 @@ export default function BooksScreen() {
         <h1>Books</h1>
         <p className="muted">The console&apos;s catalogue, filtered by tier, type and publisher.</p>
         <div className="row-buttons">
-          <button type="button" className="btn btn-primary" onClick={() => setEditingItem('new')}>
+          <Link className="btn btn-primary" to="/books/new">
             Add book
-          </button>
+          </Link>
         </div>
 
         <FilterBar
@@ -161,20 +154,12 @@ export default function BooksScreen() {
           emptyMessage="No books match these filters."
           onRetry={() => load()}
         />
-        <Pagination page={page} size={PAGE_SIZE} total={list.total} onPageChange={setPage} />
+        {/* Guarded like every other list: unguarded, Previous/Next and "Page 1 of 1 · 0 total"
+            rendered underneath the loading row and underneath the error message. */}
+        {!list.error && list.total > 0 ? (
+          <Pagination page={page} size={PAGE_SIZE} total={list.total} onPageChange={setPage} />
+        ) : null}
       </section>
-
-      {editingItem !== null ? (
-        <section className="card">
-          <h2>{editingItem === 'new' ? 'Add book' : 'Edit book'}</h2>
-          <BookForm
-            key={editingItem === 'new' ? 'new' : editingItem.id}
-            initialItem={editingItem === 'new' ? null : editingItem}
-            onSaved={handleSaved}
-            onCancel={() => setEditingItem(null)}
-          />
-        </section>
-      ) : null}
     </div>
   );
 }

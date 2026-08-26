@@ -1,16 +1,11 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import DataTable from '../ui/DataTable.jsx';
 import Pagination from '../ui/Pagination.jsx';
 import StatusBadge from '../ui/StatusBadge.jsx';
-import OperatorForm from './OperatorForm.jsx';
 import { useToast } from '../ui/ToastContext.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
-import {
-  createAdminUser,
-  deactivateAdminUser,
-  listAdminUsers,
-  updateAdminUser,
-} from '../api/adminUsers.js';
+import { deactivateAdminUser, listAdminUsers } from '../api/adminUsers.js';
 
 const PAGE_SIZE = 20;
 
@@ -30,7 +25,7 @@ function scopeOf(operator) {
  * The table's columns. At module level because it is a plain function of its arguments, and
  * because six columns with a two-button actions cell is most of a screen's worth of lines.
  */
-function buildColumns({ currentUserId, pendingId, onEdit, onDeactivate }) {
+function buildColumns({ currentUserId, pendingId, onDeactivate }) {
   return [
     { key: 'email', label: 'Email' },
     { key: 'name', label: 'Name' },
@@ -42,9 +37,11 @@ function buildColumns({ currentUserId, pendingId, onEdit, onDeactivate }) {
       label: '',
       render: (row) => (
         <div className="row-buttons" style={{ marginBottom: 0 }}>
-          <button type="button" className="btn" onClick={() => onEdit(row)}>
+          {/* The row travels with the link: there is no endpoint to fetch one operator by id,
+              so the edit screen has no other way to get it. */}
+          <Link className="btn" to={`/operators/${row.id}/edit`} state={{ operator: row }}>
             Edit
-          </button>
+          </Link>
           {/* Nothing server side stops an operator disabling their own account, and doing it
               by accident locks them out on their next token refresh. */}
           {row.id === currentUserId ? (
@@ -65,15 +62,13 @@ function buildColumns({ currentUserId, pendingId, onEdit, onDeactivate }) {
   ];
 }
 
-/** The operators page: a paged list, an inline create/edit form, and deactivation. */
+/** The operators page: a paged list and deactivation. Create and edit are pages of their own. */
 export default function OperatorsScreen() {
   const toast = useToast();
   const { user } = useAuth();
 
   const [page, setPage] = useState(0);
   const [list, setList] = useState({ items: [], total: 0, loading: true, error: null });
-  // null: no form. 'new': create. Otherwise the row being edited.
-  const [editing, setEditing] = useState(null);
   // The row a Deactivate click is waiting to be confirmed for. Not window.confirm: a native
   // dialog is silently blocked in several embedded browsers, which makes the button look dead.
   const [confirming, setConfirming] = useState(null);
@@ -95,25 +90,6 @@ export default function OperatorsScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- load reads page from state directly
   }, [page]);
 
-  // OperatorForm awaits this, so a rejection is what re-enables it. Rethrown rather than
-  // swallowed because a taken email is the form's to show, on the email field.
-  async function handleSubmit(payload) {
-    try {
-      if (editing === 'new') {
-        await createAdminUser(payload);
-        toast.saved('Operator created.');
-      } else {
-        await updateAdminUser(editing.id, payload);
-        toast.saved('Operator saved.');
-      }
-    } catch (failure) {
-      toast.failed(failure);
-      throw failure;
-    }
-    setEditing(null);
-    await load();
-  }
-
   async function confirmDeactivate() {
     const target = confirming;
     setConfirming(null);
@@ -133,7 +109,6 @@ export default function OperatorsScreen() {
   const columns = buildColumns({
     currentUserId: user?.id,
     pendingId,
-    onEdit: (row) => setEditing(row),
     onDeactivate: (row) => setConfirming(row),
   });
 
@@ -142,9 +117,9 @@ export default function OperatorsScreen() {
       <section className="card">
         <div className="row-buttons" style={{ justifyContent: 'space-between' }}>
           <h1>Operators</h1>
-          <button type="button" className="btn btn-primary" onClick={() => setEditing('new')}>
+          <Link className="btn btn-primary" to="/operators/new">
             Add operator
-          </button>
+          </Link>
         </div>
         <p className="muted">
           The people who run this console. Adding, changing or deactivating one needs full access.
@@ -179,20 +154,6 @@ export default function OperatorsScreen() {
               Cancel
             </button>
           </div>
-        </section>
-      ) : null}
-
-      {editing ? (
-        <section className="card">
-          <h2>{editing === 'new' ? 'Add operator' : 'Edit operator'}</h2>
-          <OperatorForm
-            // Remounts the form when the row changes, so clicking a different operator while
-            // it is open cannot leave the previous one's values on screen.
-            key={editing === 'new' ? 'new' : editing.id}
-            initial={editing === 'new' ? null : editing}
-            onSubmit={handleSubmit}
-            onCancel={() => setEditing(null)}
-          />
         </section>
       ) : null}
     </div>
