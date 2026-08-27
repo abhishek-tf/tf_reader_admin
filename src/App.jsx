@@ -4,6 +4,7 @@ import RequireAuth from './auth/RequireAuth.jsx';
 import LoginScreen from './screens/LoginScreen.jsx';
 import BooksScreen from './screens/BooksScreen.jsx';
 import ShelvesScreen from './screens/ShelvesScreen.jsx';
+import EntitlementsScreen from './screens/EntitlementsScreen.jsx';
 import InstitutionsScreen from './screens/InstitutionsScreen.jsx';
 import FrameCheck from './screens/FrameCheck.jsx';
 import PublishersScreen from './screens/PublishersScreen.jsx';
@@ -37,6 +38,7 @@ export default function App() {
         <Route path="/institutions" element={<InstitutionsScreen />} />
         <Route path="/books" element={<BooksScreen />} />
         <Route path="/shelves" element={<ShelvesScreen />} />
+        <Route path="/entitlements" element={<EntitlementsScreen />} />
         <Route path="/frame-check" element={<FrameCheck />} />
         <Route path="/publishers" element={<PublishersScreen />} />
         <Route path="/publishers/new" element={<PublisherForm />} />

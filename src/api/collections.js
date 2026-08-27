@@ -55,3 +55,13 @@ export function listCollections(publisherId, { page, size } = {}) {
 export function createCollection(publisherId, collection) {
   return api.post(`/publishers/${publisherId}/collections`, collection);
 }
+
+/**
+ * Every collection across every publisher, from GET /api/admin/v1/collections — not the
+ * publisher-nested endpoint above. For an institution admin (or a super admin who passes
+ * institutionId), each collection carries entitlementStatus, resolved from that institution's
+ * COLLECTION- and PUBLISHER-scoped entitlements only. Null for any other caller, not "none".
+ */
+export function listAllCollections(params, opts) {
+  return api.get(`/collections${pageQuery(params)}`, opts);
+}
