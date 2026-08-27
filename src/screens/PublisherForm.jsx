@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import TextField from '../ui/TextField.jsx';
 import FormActions from '../ui/FormActions.jsx';
 import { useToast } from '../ui/ToastContext.jsx';
@@ -22,9 +22,21 @@ function validatePublisherForm(values) {
   return found;
 }
 
-/** Create and edit share this form. A null publisher means create. */
+/**
+ * Create and edit share this form. A null publisher means create.
+ *
+ * `backTo` is the address of the page this form was opened from. The other four form screens
+ * each open with a "Back to ..." link above their heading; this form is rendered straight into
+ * a route rather than wrapped by a screen, so it carries its own. Left out, no link is shown.
+ */
 // eslint-disable-next-line complexity
-export default function PublisherForm({ publisher = null, onSaved, onCancel }) {
+export default function PublisherForm({
+  publisher = null,
+  onSaved,
+  onCancel,
+  backTo,
+  backLabel = 'Back',
+}) {
   const editing = publisher !== null;
   const toast = useToast();
   const navigate = useNavigate();
@@ -91,6 +103,13 @@ export default function PublisherForm({ publisher = null, onSaved, onCancel }) {
 
   return (
     <section className="card">
+      {backTo ? (
+        <div className="row-buttons">
+          <Link className="btn" to={backTo}>
+            {backLabel}
+          </Link>
+        </div>
+      ) : null}
       <h1>{editing ? 'Edit publisher' : 'New publisher'}</h1>
 
       <form onSubmit={handleSubmit} noValidate>

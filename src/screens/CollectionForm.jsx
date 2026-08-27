@@ -7,7 +7,15 @@ import { createCollection } from '../api/collections.js';
 
 const EMPTY_FORM = { code: '', name: '', description: '' };
 
-export default function CollectionForm({ publisherId, onCreated }) {
+/**
+ * The fields for a new collection. Create only: the contract has no endpoint for changing a
+ * collection's name or code once it exists.
+ *
+ * `onCancel` is where the screen wants to go when the operator backs out. It is a prop rather
+ * than a local "clear the fields" because this form now has an address of its own, and on a
+ * page of its own Cancel means leave, not empty the boxes.
+ */
+export default function CollectionForm({ publisherId, onCreated, onCancel }) {
   const toast = useToast();
 
   const [form, setForm] = useState(EMPTY_FORM);
@@ -66,7 +74,6 @@ export default function CollectionForm({ publisherId, onCreated }) {
 
   return (
     <section className="card">
-      <h2>New collection</h2>
       <form onSubmit={handleSubmit} noValidate>
         <TextField
           label="Code"
@@ -95,12 +102,7 @@ export default function CollectionForm({ publisherId, onCreated }) {
           disabled={saving}
         />
 
-        <FormActions
-          onCancel={() => setForm(EMPTY_FORM)}
-          saving={saving}
-          saveLabel="Create collection"
-          cancelLabel="Clear"
-        />
+        <FormActions onCancel={onCancel} saving={saving} saveLabel="Create collection" />
       </form>
     </section>
   );

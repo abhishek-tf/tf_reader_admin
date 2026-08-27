@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import PublisherForm from './PublisherForm.jsx';
 import PublisherStatusActions from './PublisherStatusActions.jsx';
 import PublisherCollections from './PublisherCollections.jsx';
 import StatusBadge from '../ui/StatusBadge.jsx';
@@ -12,7 +11,6 @@ export default function PublisherDetailScreen() {
   const [publisher, setPublisher] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [editing, setEditing] = useState(false);
   const [reloadCount, setReloadCount] = useState(0);
 
   useEffect(() => {
@@ -36,11 +34,6 @@ export default function PublisherDetailScreen() {
       cancelled = true;
     };
   }, [publisherId, reloadCount]);
-
-  function handleSaved(updated) {
-    setPublisher(updated);
-    setEditing(false);
-  }
 
   if (loading) {
     return <p className="muted">Loading the publisher...</p>;
@@ -74,37 +67,29 @@ export default function PublisherDetailScreen() {
 
   return (
     <div className="stack">
-      {editing ? (
-        <PublisherForm
-          publisher={publisher}
-          onSaved={handleSaved}
-          onCancel={() => setEditing(false)}
-        />
-      ) : (
-        <section className="card">
-          <Link className="muted small" to="/publishers">
-            Back to publishers
-          </Link>
-          <h1>{publisher.name}</h1>
-          <p className="muted">
-            {publisher.code} · <StatusBadge status={publisher.status} />
+      <section className="card">
+        <Link className="muted small" to="/publishers">
+          Back to publishers
+        </Link>
+        <h1>{publisher.name}</h1>
+        <p className="muted">
+          {publisher.code} · <StatusBadge status={publisher.status} />
+        </p>
+        {publisher.description ? <p>{publisher.description}</p> : null}
+        {publisher.logoUrl ? (
+          <p className="muted small">
+            <a href={publisher.logoUrl} target="_blank" rel="noreferrer">
+              {publisher.logoUrl}
+            </a>
           </p>
-          {publisher.description ? <p>{publisher.description}</p> : null}
-          {publisher.logoUrl ? (
-            <p className="muted small">
-              <a href={publisher.logoUrl} target="_blank" rel="noreferrer">
-                {publisher.logoUrl}
-              </a>
-            </p>
-          ) : null}
-          <div className="row-buttons">
-            <button type="button" className="btn" onClick={() => setEditing(true)}>
-              Edit
-            </button>
-          </div>
-          <PublisherStatusActions publisher={publisher} onChanged={setPublisher} />
-        </section>
-      )}
+        ) : null}
+        <div className="row-buttons">
+          <Link className="btn" to={`/publishers/${publisher.id}/edit`}>
+            Edit
+          </Link>
+        </div>
+        <PublisherStatusActions publisher={publisher} onChanged={setPublisher} />
+      </section>
 
       <PublisherCollections publisherId={publisher.id} />
     </div>
