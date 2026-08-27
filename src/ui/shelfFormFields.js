@@ -11,16 +11,7 @@ export const SHELF_LABEL = {
   shelf_3: 'Shelf 3',
 };
 
-// Comma-separated text is the same plain, obvious stand-in for an id array used elsewhere in
-// the console. Empty entries from stray commas are dropped rather than sent as blank strings.
-export function splitList(value) {
-  return value
-    .split(',')
-    .map((entry) => entry.trim())
-    .filter(Boolean);
-}
-
-/** Reshapes a loaded FeedSettings into the plain strings the controlled inputs hold. */
+/** Reshapes a loaded FeedSettings into the plain strings and arrays the controlled inputs hold. */
 export function toFormState(settings) {
   return {
     feedTitle: settings.feedTitle,
@@ -34,7 +25,7 @@ export function toFormState(settings) {
         id: shelf.id,
         order: shelf.order,
         title: shelf.title,
-        itemIdsText: shelf.itemIds.join(', '),
+        itemIds: shelf.itemIds,
       })),
   };
 }
@@ -49,13 +40,12 @@ export function validate(form) {
   form.shelves.forEach((shelf) => {
     if (!shelf.title.trim())
       found[`${shelf.id}-title`] = 'Every shelf needs a title, even one with no books on it.';
-    if (splitList(shelf.itemIdsText).length > 50)
-      found[`${shelf.id}-items`] = 'Up to 50 items per shelf.';
+    if (shelf.itemIds.length > 50) found[`${shelf.id}-items`] = 'Up to 50 items per shelf.';
   });
   return found;
 }
 
-/** Turns the form's plain strings back into the shape FeedSettingsWrite expects. */
+/** Turns the form's plain strings and arrays back into the shape FeedSettingsWrite expects. */
 export function buildPayload(form) {
   return {
     feedTitle: form.feedTitle.trim(),
@@ -66,7 +56,7 @@ export function buildPayload(form) {
       id: shelf.id,
       order: shelf.order,
       title: shelf.title.trim(),
-      itemIds: splitList(shelf.itemIdsText),
+      itemIds: shelf.itemIds,
     })),
   };
 }
