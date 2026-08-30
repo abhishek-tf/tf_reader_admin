@@ -68,6 +68,11 @@ export default function PublishersScreen() {
     setQuery({ q: filters.q.trim(), status: filters.status, page: 0 });
   }
 
+  function handleClear() {
+    setFilters({ q: '', status: '' });
+    setQuery({ q: '', status: '', page: 0 });
+  }
+
   // A fresh object re-runs the load effect without changing the query.
   function handleRetry() {
     setQuery((current) => ({ ...current }));
@@ -104,7 +109,7 @@ export default function PublishersScreen() {
             name="q"
             value={filters.q}
             onChange={change}
-            placeholder="Name or code"
+            placeholder="Name"
             disabled={loading}
           />
           <SelectField
@@ -119,6 +124,9 @@ export default function PublishersScreen() {
           <div className="form-actions">
             <button type="submit" className="btn btn-primary" disabled={loading}>
               {loading ? 'Searching...' : 'Search'}
+            </button>
+            <button type="button" className="btn" onClick={handleClear} disabled={loading}>
+              Clear
             </button>
           </div>
         </form>
