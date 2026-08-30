@@ -103,11 +103,6 @@ export default function LoginScreen() {
           saveLabel="Sign in"
           cancelLabel="Clear"
         />
-
-        <p className="muted small">
-          A reload keeps you signed in for up to twelve hours. The access token is held in memory,
-          and the refresh token is an HttpOnly cookie no script can read.
-        </p>
       </form>
     </div>
   );
