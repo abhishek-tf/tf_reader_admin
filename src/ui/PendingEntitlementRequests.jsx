@@ -26,20 +26,27 @@ export default function PendingEntitlementRequests() {
       .catch(() => setInstitutionPicker((c) => ({ ...c, loading: false })));
   }, []);
 
-  function loadRequests(institutionId, signal) {
+  async function loadRequests(institutionId, signal) {
     setRequests((c) => ({ ...c, loading: true, error: null }));
-    return listEntitlements(institutionId, { size: 100 }, { signal })
-      .then((data) =>
-        setRequests({
-          list: data.items.filter((e) => e.status === 'PENDING'),
-          loading: false,
-          error: null,
-        })
-      )
-      .catch((error) => {
-        if (error.name === 'AbortError') return;
-        setRequests((c) => ({ ...c, loading: false, error }));
-      });
+    try {
+      // An institution's entitlement history only grows, never shrinks, so the pending ones
+      // this queue cares about can land on any page. Walk every page (at the endpoint's max
+      // size) rather than just the first, so a request past the first 100 records is never
+      // silently missing from the queue.
+      const pending = [];
+      let page = 0;
+      let total = Infinity;
+      while (page * 100 < total) {
+        const data = await listEntitlements(institutionId, { page, size: 100 }, { signal });
+        total = data.total;
+        pending.push(...data.items.filter((e) => e.status === 'PENDING'));
+        page += 1;
+      }
+      setRequests({ list: pending, loading: false, error: null });
+    } catch (error) {
+      if (error.name === 'AbortError') return;
+      setRequests((c) => ({ ...c, loading: false, error }));
+    }
   }
 
   useEffect(() => {

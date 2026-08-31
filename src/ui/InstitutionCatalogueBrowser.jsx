@@ -34,6 +34,7 @@ export default function InstitutionCatalogueBrowser({ institutionId }) {
     loading: true,
     error: null,
   });
+  const [requestingIds, setRequestingIds] = useState(() => new Set());
 
   function loadItems(signal) {
     setItems((c) => ({ ...c, loading: true, error: null }));
@@ -85,12 +86,20 @@ export default function InstitutionCatalogueBrowser({ institutionId }) {
   }
 
   async function handleRequestItem(item) {
+    if (requestingIds.has(item.id)) return;
+    setRequestingIds((prev) => new Set(prev).add(item.id));
     try {
       await createEntitlement(institutionId, { scopeType: 'ITEM', scopeId: item.id });
       toast.saved('Requested.');
       loadItems();
     } catch (error) {
       toast.failed(error);
+    } finally {
+      setRequestingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(item.id);
+        return next;
+      });
     }
   }
 
@@ -115,7 +124,7 @@ export default function InstitutionCatalogueBrowser({ institutionId }) {
       // CatalogueItem.entitlementStatus is lowercase (none/pending/active/revoked); StatusBadge
       // expects the uppercase EntitlementStatus enum it shares with every other status badge.
       render: (row) =>
-        row.entitlementStatus === 'none' ? (
+        !row.entitlementStatus || row.entitlementStatus === 'none' ? (
           <span className="muted">Not requested</span>
         ) : (
           <StatusBadge status={row.entitlementStatus.toUpperCase()} />
@@ -126,7 +135,12 @@ export default function InstitutionCatalogueBrowser({ institutionId }) {
       label: '',
       render: (row) =>
         canRequestScope(row.entitlementStatus) ? (
-          <button type="button" className="btn" onClick={() => handleRequestItem(row)}>
+          <button
+            type="button"
+            className="btn"
+            disabled={requestingIds.has(row.id)}
+            onClick={() => handleRequestItem(row)}
+          >
             Request
           </button>
         ) : null,

@@ -24,6 +24,7 @@ export default function CollectionRequestBrowser({ institutionId }) {
     loading: true,
     error: null,
   });
+  const [requestingIds, setRequestingIds] = useState(() => new Set());
 
   function load(signal) {
     setCollections((c) => ({ ...c, loading: true, error: null }));
@@ -45,12 +46,20 @@ export default function CollectionRequestBrowser({ institutionId }) {
   }, [page, institutionId]);
 
   async function handleRequest(collection) {
+    if (requestingIds.has(collection.id)) return;
+    setRequestingIds((prev) => new Set(prev).add(collection.id));
     try {
       await createEntitlement(institutionId, { scopeType: 'COLLECTION', scopeId: collection.id });
       toast.saved('Requested.');
       load();
     } catch (error) {
       toast.failed(error);
+    } finally {
+      setRequestingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(collection.id);
+        return next;
+      });
     }
   }
 
@@ -61,7 +70,7 @@ export default function CollectionRequestBrowser({ institutionId }) {
       key: 'entitlementStatus',
       label: 'Your status',
       render: (row) =>
-        row.entitlementStatus === 'none' ? (
+        !row.entitlementStatus || row.entitlementStatus === 'none' ? (
           <span className="muted">Not requested</span>
         ) : (
           <StatusBadge status={row.entitlementStatus.toUpperCase()} />
@@ -72,7 +81,12 @@ export default function CollectionRequestBrowser({ institutionId }) {
       label: '',
       render: (row) =>
         canRequestScope(row.entitlementStatus) ? (
-          <button type="button" className="btn" onClick={() => handleRequest(row)}>
+          <button
+            type="button"
+            className="btn"
+            disabled={requestingIds.has(row.id)}
+            onClick={() => handleRequest(row)}
+          >
             Request
           </button>
         ) : null,

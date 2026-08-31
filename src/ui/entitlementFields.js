@@ -20,8 +20,10 @@ export const TIER_LABEL = {
 
 /**
  * A request can be made again once it isn't already live or waiting on a decision. Works for
- * any scope's entitlementStatus - an item's, or a collection's.
+ * any scope's entitlementStatus - an item's, or a collection's. A missing status (null for a
+ * caller the backend doesn't scope to an institution) is treated the same as 'none', since
+ * there is nothing on record to block a fresh request.
  */
 export function canRequestScope(entitlementStatus) {
-  return entitlementStatus === 'none' || entitlementStatus === 'revoked';
+  return !entitlementStatus || entitlementStatus === 'none' || entitlementStatus === 'revoked';
 }
