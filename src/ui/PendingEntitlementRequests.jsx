@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import DataTable from './DataTable.jsx';
 import SelectField from './SelectField.jsx';
 import { useToast } from './ToastContext.jsx';
+import { useInFlightIds } from './entitlementFields.jsx';
 import { listInstitutions } from '../api/institution.js';
 import { listEntitlements, changeEntitlementStatus } from '../api/entitlements.js';
 
@@ -18,7 +19,7 @@ export default function PendingEntitlementRequests() {
     selectedId: '',
   });
   const [requests, setRequests] = useState({ list: [], loading: false, error: null });
-  const [pendingActionIds, setPendingActionIds] = useState(() => new Set());
+  const pendingActionIds = useInFlightIds();
 
   useEffect(() => {
     listInstitutions({ status: 'ACTIVE', size: 100 })
@@ -58,7 +59,7 @@ export default function PendingEntitlementRequests() {
 
   async function handleDecision(entitlement, status) {
     if (pendingActionIds.has(entitlement.id)) return;
-    setPendingActionIds((prev) => new Set(prev).add(entitlement.id));
+    pendingActionIds.start(entitlement.id);
     try {
       await changeEntitlementStatus(entitlement.id, { status });
       toast.saved(status === 'ACTIVE' ? 'Approved.' : 'Rejected.');
@@ -66,11 +67,7 @@ export default function PendingEntitlementRequests() {
     } catch (error) {
       toast.failed(error);
     } finally {
-      setPendingActionIds((prev) => {
-        const next = new Set(prev);
-        next.delete(entitlement.id);
-        return next;
-      });
+      pendingActionIds.finish(entitlement.id);
     }
   }
 

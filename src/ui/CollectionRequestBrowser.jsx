@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import DataTable from './DataTable.jsx';
 import Pagination from './Pagination.jsx';
-import StatusBadge from './StatusBadge.jsx';
 import { useToast } from './ToastContext.jsx';
 import { listAllCollections } from '../api/collections.js';
 import { createEntitlement } from '../api/entitlements.js';
-import { canRequestScope } from './entitlementFields.js';
+import { canRequestScope, renderEntitlementStatus, useInFlightIds } from './entitlementFields.jsx';
 
 const PAGE_SIZE = 20;
 
@@ -24,7 +23,7 @@ export default function CollectionRequestBrowser({ institutionId }) {
     loading: true,
     error: null,
   });
-  const [requestingIds, setRequestingIds] = useState(() => new Set());
+  const requestingIds = useInFlightIds();
 
   function load(signal) {
     setCollections((c) => ({ ...c, loading: true, error: null }));
@@ -47,7 +46,7 @@ export default function CollectionRequestBrowser({ institutionId }) {
 
   async function handleRequest(collection) {
     if (requestingIds.has(collection.id)) return;
-    setRequestingIds((prev) => new Set(prev).add(collection.id));
+    requestingIds.start(collection.id);
     try {
       await createEntitlement(institutionId, { scopeType: 'COLLECTION', scopeId: collection.id });
       toast.saved('Requested.');
@@ -55,11 +54,7 @@ export default function CollectionRequestBrowser({ institutionId }) {
     } catch (error) {
       toast.failed(error);
     } finally {
-      setRequestingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(collection.id);
-        return next;
-      });
+      requestingIds.finish(collection.id);
     }
   }
 
@@ -69,12 +64,7 @@ export default function CollectionRequestBrowser({ institutionId }) {
     {
       key: 'entitlementStatus',
       label: 'Your status',
-      render: (row) =>
-        !row.entitlementStatus || row.entitlementStatus === 'none' ? (
-          <span className="muted">Not requested</span>
-        ) : (
-          <StatusBadge status={row.entitlementStatus.toUpperCase()} />
-        ),
+      render: (row) => renderEntitlementStatus(row.entitlementStatus),
     },
     {
       key: 'actions',
