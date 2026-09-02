@@ -1,0 +1,109 @@
+import { useEffect, useState } from 'react';
+import DataTable from './DataTable.jsx';
+import { useToast } from './ToastContext.jsx';
+import { listCatalogueItems } from '../api/catalogueItems.js';
+
+/**
+ * The shelf's picked items, in display order, with reorder and remove. Split out of
+ * ShelfBookPicker, which was over the line budget once this and the search half were both in
+ * one file.
+ */
+export default function ShelfPickedBooks({
+  institutionId,
+  itemIds,
+  maxItems,
+  onRemove,
+  onMove,
+  disabled,
+}) {
+  const toast = useToast();
+  const [titles, setTitles] = useState({});
+
+  useEffect(() => {
+    if (itemIds.every((id) => titles[id])) return;
+    let cancelled = false;
+    // The single-item endpoint requires publisher-level access and 403s for an institution
+    // admin - the only role that actually uses this screen - so titles are resolved from the
+    // list endpoint instead of one request per id. A shelf holds at most maxItems ids, so
+    // fetching page by page (at the endpoint's max page size) until every picked id is found -
+    // or the institution's whole catalogue has been seen - always terminates, and terminates
+    // quickly for any institution smaller than a few hundred books.
+    async function resolveTitles() {
+      const found = {};
+      let page = 0;
+      let total = Infinity;
+      while (Object.keys(found).length < itemIds.length && page * 100 < total) {
+        const data = await listCatalogueItems({ institutionId, page, size: 100 });
+        if (cancelled) return;
+        total = data.total;
+        for (const item of data.items) {
+          if (itemIds.includes(item.id)) found[item.id] = item.title;
+        }
+        page += 1;
+      }
+      if (cancelled) return;
+      setTitles((c) => ({ ...c, ...found }));
+    }
+    resolveTitles().catch((error) => {
+      if (cancelled) return;
+      toast.failed(error);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // Only re-running when a picked id is not yet known; re-running on every search keystroke
+    // in the sibling component would refetch the same page for no reason.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemIds]);
+
+  const rows = itemIds.map((itemId, index) => ({ id: itemId, index }));
+
+  const columns = [
+    { key: 'title', label: 'Title', render: (row) => titles[row.id] ?? row.id },
+    {
+      key: 'actions',
+      label: '',
+      render: (row) => (
+        <div className="row-buttons">
+          <button
+            type="button"
+            className="btn"
+            disabled={disabled || row.index === 0}
+            onClick={() => onMove(row.index, -1)}
+          >
+            Up
+          </button>
+          <button
+            type="button"
+            className="btn"
+            disabled={disabled || row.index === itemIds.length - 1}
+            onClick={() => onMove(row.index, 1)}
+          >
+            Down
+          </button>
+          <button
+            type="button"
+            className="btn"
+            disabled={disabled}
+            onClick={() => onRemove(row.id)}
+          >
+            Remove
+          </button>
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <div>
+      <p className="field-label">
+        Picked, in display order ({itemIds.length} of {maxItems})
+      </p>
+      <DataTable
+        columns={columns}
+        rows={rows}
+        emptyMessage="No books picked yet. This shelf stays hidden until you add one."
+      />
+    </div>
+  );
+}

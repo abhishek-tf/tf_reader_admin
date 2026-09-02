@@ -168,6 +168,7 @@ export default function ShelvesScreen() {
         {feed.form.shelves.map((shelf) => (
           <ShelfFields
             key={shelf.id}
+            institutionId={institutionId}
             shelf={shelf}
             titleError={errors[`${shelf.id}-title`]}
             itemsError={errors[`${shelf.id}-items`]}

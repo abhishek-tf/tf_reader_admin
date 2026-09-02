@@ -22,6 +22,11 @@ const ENTRIES = [
     roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN'],
   },
   { to: '/shelves', label: 'Shelves', roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN'] },
+  {
+    to: '/entitlements',
+    label: 'Entitlements',
+    roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN'],
+  },
   { to: '/operators', label: 'Operators', roles: ['SUPER_ADMIN'] },
   { to: '/audit', label: 'Audit log', roles: ['SUPER_ADMIN'] },
 ];

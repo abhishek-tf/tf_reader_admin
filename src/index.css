@@ -366,12 +366,22 @@ h2 {
   opacity: 0.55;
   cursor: not-allowed;
 }
+/* Same box model as .btn (padding + border), invisible, so a text status next to a button in
+ * the same table column takes up exactly as much height as the button would. */
+.btn-placeholder {
+  display: inline-block;
+  padding: 8px 14px;
+  border: 1px solid transparent;
+}
 .btn-primary {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
 }
 .btn-primary:hover:not(:disabled) {
+  /* Same specificity as .btn:hover, so this must restate the background explicitly - otherwise
+   * the generic light hover background wins by source order and leaves white text unreadable
+   * on it. */
   background: var(--accent);
   filter: brightness(1.15);
 }

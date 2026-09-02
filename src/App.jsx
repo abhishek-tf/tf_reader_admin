@@ -5,6 +5,7 @@ import LoginScreen from './screens/LoginScreen.jsx';
 import BooksScreen from './screens/BooksScreen.jsx';
 import BookFormScreen from './screens/BookFormScreen.jsx';
 import ShelvesScreen from './screens/ShelvesScreen.jsx';
+import EntitlementsScreen from './screens/EntitlementsScreen.jsx';
 import InstitutionsScreen from './screens/InstitutionsScreen.jsx';
 import InstitutionFormScreen from './screens/InstitutionFormScreen.jsx';
 import PublishersScreen from './screens/PublishersScreen.jsx';
@@ -52,6 +53,8 @@ export default function App() {
         <Route path="/books/:itemId/edit" element={<BookFormScreen />} />
 
         <Route path="/shelves" element={<ShelvesScreen />} />
+
+        <Route path="/entitlements" element={<EntitlementsScreen />} />
 
         <Route path="/publishers" element={<PublishersScreen />} />
         <Route
