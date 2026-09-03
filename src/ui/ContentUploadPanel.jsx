@@ -116,6 +116,7 @@ export default function ContentUploadPanel({ item }) {
           return;
         }
         // A newer run started, or the panel went away, while this was in flight.
+        // cycleRef gates both polling and upload results; item identity is stable while this panel is mounted.
         if (cycle !== cycleRef.current) return;
         setUploaded(next);
         if (POLLING_STATES.includes(next.contentState)) schedule(cycle);
