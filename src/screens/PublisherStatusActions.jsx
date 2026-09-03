@@ -55,7 +55,7 @@ export default function PublisherStatusActions({ publisher, onChanged }) {
           error={error}
           disabled={saving}
         />
-        <button type="button" className="btn" onClick={handleSuspend} disabled={saving}>
+        <button type="button" className="btn btn-primary" onClick={handleSuspend} disabled={saving}>
           {saving ? 'Suspending...' : 'Suspend'}
         </button>
       </>
@@ -64,7 +64,7 @@ export default function PublisherStatusActions({ publisher, onChanged }) {
 
   if (publisher.status === 'SUSPENDED') {
     return (
-      <button type="button" className="btn" onClick={handleActivate} disabled={saving}>
+      <button type="button" className="btn btn-primary" onClick={handleActivate} disabled={saving}>
         {saving ? 'Activating...' : 'Activate'}
       </button>
     );
