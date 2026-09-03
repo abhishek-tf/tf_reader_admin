@@ -236,3 +236,26 @@ export function pageQuery({ page = 0, size = 20, ...rest } = {}) {
   }
   return `?${params.toString()}`;
 }
+
+/**
+ * Walks every page of a list endpoint at the given page size and returns every item, for a
+ * caller that needs the whole set rather than one page of it - an institution's full
+ * entitlement history, say, not just what fits in the first 100. `fetchPage(page)` must
+ * resolve to the contract's page shape: an object with `items` and `total`.
+ *
+ * `until` stops the walk early once the items collected so far satisfy it, checked before each
+ * fetch - the same short-circuit ShelfPickedBooks needs to stop looking once every picked id is
+ * already found, rather than paging through an entire catalogue for nothing.
+ */
+export async function fetchAllPages(fetchPage, { pageSize = 100, until } = {}) {
+  const all = [];
+  let page = 0;
+  let total = Infinity;
+  while (page * pageSize < total && !(until && until(all))) {
+    const data = await fetchPage(page);
+    total = data.total;
+    all.push(...data.items);
+    page += 1;
+  }
+  return all;
+}

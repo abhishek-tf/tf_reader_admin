@@ -19,8 +19,8 @@ import { api, pageQuery } from './client.js';
 //   read, so there is nothing to send back.
 //
 //   A collection carries no membership array at all. Which books belong to it lives on the
-//   books. Membership is written through PUT /collections/{collectionId}/items, which is
-//   deliberately NOT in this module: item membership is outside Task 9.
+//   books. Membership is written through PUT /collections/{collectionId}/items, below - a full
+//   replace of the set, not an add/remove delta, so the caller always sends the whole list.
 //
 // Collection codes are UPPERCASE, matching the seeded data (LAW2024, ENV2024), per the same
 // team decision that settled publisher codes. CollectionWrite in the YAML still documents
@@ -64,4 +64,13 @@ export function createCollection(publisherId, collection) {
  */
 export function listAllCollections(params, opts) {
   return api.get(`/collections${pageQuery(params)}`, opts);
+}
+
+/**
+ * Sets a collection's membership to exactly this list of catalogue item ids. Not validated
+ * against the collection's own publisher - CollectionAdminService.setItems only checks that
+ * every id is a real catalogue item, nothing about which publisher it belongs to.
+ */
+export function setCollectionItems(collectionId, itemIds) {
+  return api.put(`/collections/${collectionId}/items`, { itemIds });
 }
