@@ -32,6 +32,20 @@ const EXPECTED_EXTENSIONS = {
 
 const FORMAT_MISMATCH = 'File format does not match content type.';
 
+// The caps IngestService enforces. Checked here only so a file that cannot possibly be accepted
+// fails in the browser rather than after the whole thing has crossed the wire — the server still
+// enforces both, and its 413 is still handled on the upload path below.
+//
+// The numbers come from the code, not from wokay-api.yaml, which still says 20 MB for a locked
+// file where IngestService says 25.
+const GENERAL_MAX_BYTES = 100 * 1024 * 1024;
+const LOCKED_MAX_BYTES = 25 * 1024 * 1024;
+// TierRules.requiresLocking keys off the access tier alone and ignores the format, so
+// SUBSCRIPTION and ELITE audio is locked too. Anything else — including an item that somehow
+// arrived without a tier — gets the general cap, so this can only ever be more permissive than
+// the server, never less. It must not be the thing that rejects a file the server would take.
+const LOCKED_TIERS = ['SUBSCRIPTION', 'ELITE'];
+
 /**
  * Upload the file for one book, and follow its ingest until it settles.
  *
@@ -60,6 +74,13 @@ export default function ContentUploadPanel({ item }) {
   // belongs to a superseded run and do nothing. Clearing the timeout alone would not catch the
   // request that is already on its way back.
   const cycleRef = useRef(0);
+  // The controller for the status request currently in flight, so it can actually be cancelled
+  // rather than merely ignored. One per request, not one per run: a controller cannot be reused
+  // once aborted, and a run makes many requests.
+  //
+  // This does not replace cycleRef. Aborting stops a request that has not landed; the cycle
+  // check is what discards one that already has.
+  const abortRef = useRef(null);
 
   /**
    * Asks for the status once, after the interval, and books the next ask only if ingest is
@@ -72,13 +93,22 @@ export default function ContentUploadPanel({ item }) {
    */
   const pollAfterDelay = useCallback(
     function schedule(cycle) {
-      // At most one timeout outstanding: the previous one goes before another is set.
+      // At most one timeout outstanding: the previous one goes before another is set. Any
+      // request still in flight from the run being replaced goes with it, so a re-upload does
+      // not leave the old run's GET running.
       window.clearTimeout(timerRef.current);
+      abortRef.current?.abort();
       timerRef.current = window.setTimeout(async () => {
+        // Made here, when the request is about to go, so it cannot be aborted before it runs.
+        const controller = new AbortController();
+        abortRef.current = controller;
         let next;
         try {
-          next = await getIngestStatus(item.id);
+          next = await getIngestStatus(item.id, { signal: controller.signal });
         } catch (cause) {
+          // We cancelled this ourselves, on unmount or on a newer run starting. Nothing went
+          // wrong, so nothing is reported.
+          if (cause?.name === 'AbortError') return;
           // Stop rather than keep asking an endpoint that is already answering with an error.
           // The operator can start a fresh run by uploading again, and the toast carries the
           // traceId that makes this reportable.
@@ -106,6 +136,7 @@ export default function ContentUploadPanel({ item }) {
     return () => {
       cycleRef.current += 1;
       window.clearTimeout(timerRef.current);
+      abortRef.current?.abort();
     };
   }, [item.contentState, pollAfterDelay]);
 
@@ -135,6 +166,16 @@ export default function ContentUploadPanel({ item }) {
       return;
     }
 
+    // Rejected the same way as a format mismatch: dropping the file leaves Upload disabled, so
+    // nothing is sent, no ingest starts and the displayed state is untouched.
+    const maxBytes = LOCKED_TIERS.includes(item.accessTier) ? LOCKED_MAX_BYTES : GENERAL_MAX_BYTES;
+    if (chosen && chosen.size > maxBytes) {
+      toast.failed(`File exceeds the ${maxBytes / 1024 / 1024} MB upload limit.`);
+      event.target.value = '';
+      setFile(null);
+      return;
+    }
+
     setFile(chosen);
   }
 
@@ -144,14 +185,23 @@ export default function ContentUploadPanel({ item }) {
     if (uploading || !file) return;
     setError(null);
     setUploading(true);
+    // Read before the await, checked after it. The upload can outlive the panel — navigating
+    // away mid-upload is ordinary — and the cleanup has then already bumped the cycle. Without
+    // this the continuation below would bump it again to a value its own guard reads as
+    // current, and schedule a timeout nothing is left alive to clear: an ingest poll every
+    // three seconds, on a dead component, until the server reached a terminal state.
+    const startCycle = cycleRef.current;
     try {
       const status = await uploadCatalogueItemContent(item.id, file, format);
+      if (startCycle !== cycleRef.current) return;
       setUploaded(status);
       toast.saved('Upload queued.');
       // Bumped even when there is nothing to poll, so any earlier run is retired either way.
       const cycle = (cycleRef.current += 1);
       if (POLLING_STATES.includes(status.contentState)) pollAfterDelay(cycle);
     } catch (cause) {
+      // Same reasoning as the success path: a panel that has gone has nowhere to put a message.
+      if (startCycle !== cycleRef.current) return;
       // The same split BookForm makes: a validation message belongs next to the field, and
       // anything else is a toast, which is what carries the traceId. A file over the size cap
       // arrives as VALIDATION_FAILED too, so the limit the operator reads is the server's own
