@@ -68,7 +68,7 @@ export default function PublisherDetailScreen() {
   return (
     <div className="stack">
       <section className="card">
-        <Link className="muted small" to="/publishers">
+        <Link className="btn" to="/publishers">
           Back to publishers
         </Link>
         <h1>{publisher.name}</h1>
@@ -84,7 +84,7 @@ export default function PublisherDetailScreen() {
           </p>
         ) : null}
         <div className="row-buttons">
-          <Link className="btn" to={`/publishers/${publisher.id}/edit`}>
+          <Link className="btn btn-primary" to={`/publishers/${publisher.id}/edit`}>
             Edit
           </Link>
         </div>
