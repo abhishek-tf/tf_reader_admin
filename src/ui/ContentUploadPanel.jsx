@@ -27,7 +27,7 @@ const POLLING_STATES = ['QUEUED', 'PROCESSING'];
 const EXPECTED_EXTENSIONS = {
   PDF: ['.pdf'],
   EPUB: ['.epub'],
-  AUDIO: ['.mp3'],
+  AUDIO: ['.mp3', '.wav'],
 };
 
 const FORMAT_MISMATCH = 'File format does not match content type.';
