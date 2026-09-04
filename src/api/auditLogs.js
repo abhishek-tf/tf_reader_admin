@@ -89,16 +89,10 @@ function toInstant(value, endOfDay) {
  *
  * `size` is capped at 100, and a larger one is a 400 VALIDATION_FAILED.
  */
-export function listAuditLogs({
-  entityType,
-  entityId,
-  actorId,
-  action,
-  from,
-  to,
-  page,
-  size,
-} = {}) {
+export function listAuditLogs(
+  { entityType, entityId, actorId, action, from, to, page, size } = {},
+  opts
+) {
   const query = pageQuery({
     page,
     size,
@@ -109,5 +103,5 @@ export function listAuditLogs({
     from: toInstant(from, false),
     to: toInstant(to, true),
   });
-  return api.get(`/audit-logs${query}`);
+  return api.get(`/audit-logs${query}`, opts);
 }

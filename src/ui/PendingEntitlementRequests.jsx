@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import DataTable from './DataTable.jsx';
 import SelectField from './SelectField.jsx';
+import EntitlementActivityLog from './EntitlementActivityLog.jsx';
 import { useToast } from './ToastContext.jsx';
 import { useInFlightIds } from './entitlementFields.jsx';
 import { listInstitutions } from '../api/institution.js';
 import { listEntitlements, changeEntitlementStatus } from '../api/entitlements.js';
+import { fetchAllPages } from '../api/client.js';
 
 /**
  * A super admin's queue: pick an institution, see its pending entitlement requests, approve
@@ -31,19 +33,16 @@ export default function PendingEntitlementRequests() {
     setRequests((c) => ({ ...c, loading: true, error: null }));
     try {
       // An institution's entitlement history only grows, never shrinks, so the pending ones
-      // this queue cares about can land on any page. Walk every page (at the endpoint's max
-      // size) rather than just the first, so a request past the first 100 records is never
-      // silently missing from the queue.
-      const pending = [];
-      let page = 0;
-      let total = Infinity;
-      while (page * 100 < total) {
-        const data = await listEntitlements(institutionId, { page, size: 100 }, { signal });
-        total = data.total;
-        pending.push(...data.items.filter((e) => e.status === 'PENDING'));
-        page += 1;
-      }
-      setRequests({ list: pending, loading: false, error: null });
+      // this queue cares about can land on any page. Walk every page rather than just the
+      // first, so a request past the first 100 records is never silently missing.
+      const all = await fetchAllPages((page) =>
+        listEntitlements(institutionId, { page, size: 100 }, { signal })
+      );
+      setRequests({
+        list: all.filter((e) => e.status === 'PENDING'),
+        loading: false,
+        error: null,
+      });
     } catch (error) {
       if (error.name === 'AbortError') return;
       setRequests((c) => ({ ...c, loading: false, error }));
@@ -118,16 +117,19 @@ export default function PendingEntitlementRequests() {
       </section>
 
       {institutionPicker.selectedId ? (
-        <section className="card">
-          <DataTable
-            columns={columns}
-            rows={requests.list}
-            loading={requests.loading}
-            error={requests.error}
-            emptyMessage="No pending requests for this institution."
-            onRetry={() => loadRequests(institutionPicker.selectedId)}
-          />
-        </section>
+        <>
+          <section className="card">
+            <DataTable
+              columns={columns}
+              rows={requests.list}
+              loading={requests.loading}
+              error={requests.error}
+              emptyMessage="No pending requests for this institution."
+              onRetry={() => loadRequests(institutionPicker.selectedId)}
+            />
+          </section>
+          <EntitlementActivityLog institutionId={institutionPicker.selectedId} />
+        </>
       ) : (
         <section className="card">
           <p className="muted">Choose an institution above to see its pending requests.</p>

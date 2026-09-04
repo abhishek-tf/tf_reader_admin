@@ -13,6 +13,7 @@ import PublisherForm from './screens/PublisherForm.jsx';
 import PublisherEditScreen from './screens/PublisherEditScreen.jsx';
 import PublisherDetailScreen from './screens/PublisherDetailScreen.jsx';
 import CollectionFormScreen from './screens/CollectionFormScreen.jsx';
+import CollectionItemsScreen from './screens/CollectionItemsScreen.jsx';
 import OperatorsScreen from './screens/OperatorsScreen.jsx';
 import OperatorFormScreen from './screens/OperatorFormScreen.jsx';
 import AuditLogsScreen from './screens/AuditLogsScreen.jsx';
@@ -65,6 +66,10 @@ export default function App() {
         <Route path="/publishers/:publisherId/edit" element={<PublisherEditScreen />} />
         {/* Create only. There is no endpoint for editing a collection's name or code. */}
         <Route path="/publishers/:publisherId/collections/new" element={<CollectionFormScreen />} />
+        <Route
+          path="/publishers/:publisherId/collections/:collectionId/items"
+          element={<CollectionItemsScreen />}
+        />
 
         <Route path="/operators" element={<OperatorsScreen />} />
         <Route path="/operators/new" element={<OperatorFormScreen />} />

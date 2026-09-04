@@ -3,13 +3,6 @@ import { Link } from 'react-router-dom';
 import DataTable from '../ui/DataTable.jsx';
 import { listCollections } from '../api/collections.js';
 
-// Not sortable: the contract's collections list takes no sort parameter.
-const COLUMNS = [
-  { key: 'name', label: 'Name' },
-  { key: 'code', label: 'Code' },
-  { key: 'itemCount', label: 'Books' },
-];
-
 const EMPTY_PAGE = { items: [], page: 0, size: 0, total: 0 };
 
 export default function PublisherCollections({ publisherId }) {
@@ -47,6 +40,23 @@ export default function PublisherCollections({ publisherId }) {
   const result = pageResult ?? EMPTY_PAGE;
   const rows = result.items;
 
+  // Not sortable: the contract's collections list takes no sort parameter. A function of
+  // publisherId rather than a module-level constant, since the actions column's link needs it.
+  const columns = [
+    { key: 'name', label: 'Name' },
+    { key: 'code', label: 'Code' },
+    { key: 'itemCount', label: 'Books' },
+    {
+      key: 'actions',
+      label: '',
+      render: (row) => (
+        <Link className="btn" to={`/publishers/${publisherId}/collections/${row.id}/items`}>
+          Manage books
+        </Link>
+      ),
+    },
+  ];
+
   return (
     <section className="card">
       <div className="row-buttons" style={{ justifyContent: 'space-between' }}>
@@ -56,7 +66,7 @@ export default function PublisherCollections({ publisherId }) {
         </Link>
       </div>
       <DataTable
-        columns={COLUMNS}
+        columns={columns}
         rows={rows}
         loading={loading}
         error={error}

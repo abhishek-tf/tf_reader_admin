@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import DataTable from './DataTable.jsx';
 import { useToast } from './ToastContext.jsx';
 import { listCatalogueItems } from '../api/catalogueItems.js';
+import { fetchAllPages } from '../api/client.js';
 
 /**
  * The shelf's picked items, in display order, with reorder and remove. Split out of
@@ -24,30 +25,24 @@ export default function ShelfPickedBooks({
     let cancelled = false;
     // The single-item endpoint requires publisher-level access and 403s for an institution
     // admin - the only role that actually uses this screen - so titles are resolved from the
-    // list endpoint instead of one request per id. A shelf holds at most maxItems ids, so
-    // fetching page by page (at the endpoint's max page size) until every picked id is found -
-    // or the institution's whole catalogue has been seen - always terminates, and terminates
-    // quickly for any institution smaller than a few hundred books.
-    async function resolveTitles() {
-      const found = {};
-      let page = 0;
-      let total = Infinity;
-      while (Object.keys(found).length < itemIds.length && page * 100 < total) {
-        const data = await listCatalogueItems({ institutionId, page, size: 100 });
+    // list endpoint instead of one request per id. `until` stops the walk the moment every
+    // picked id has turned up, so this terminates quickly for any institution smaller than a
+    // few hundred books instead of paging through its whole catalogue for nothing.
+    fetchAllPages((page) => listCatalogueItems({ institutionId, page, size: 100 }), {
+      until: (seen) => itemIds.every((id) => seen.some((item) => item.id === id)),
+    })
+      .then((items) => {
         if (cancelled) return;
-        total = data.total;
-        for (const item of data.items) {
+        const found = {};
+        for (const item of items) {
           if (itemIds.includes(item.id)) found[item.id] = item.title;
         }
-        page += 1;
-      }
-      if (cancelled) return;
-      setTitles((c) => ({ ...c, ...found }));
-    }
-    resolveTitles().catch((error) => {
-      if (cancelled) return;
-      toast.failed(error);
-    });
+        setTitles((c) => ({ ...c, ...found }));
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        toast.failed(error);
+      });
     return () => {
       cancelled = true;
     };
