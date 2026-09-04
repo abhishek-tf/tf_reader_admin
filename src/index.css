@@ -93,6 +93,13 @@ h2 {
   font-size: 12px;
   margin: 2px 0 0;
 }
+.cover-preview {
+  max-width: 160px;
+  max-height: 220px;
+  object-fit: contain;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
 
 /* ── shell: header on top, menu left, content right ───────────────────────── */
 .shell {
