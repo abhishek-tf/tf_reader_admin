@@ -5,6 +5,7 @@ import CollectionPickedBooks from './CollectionPickedBooks.jsx';
 import { useToast } from './ToastContext.jsx';
 import { listCatalogueItems } from '../api/catalogueItems.js';
 import { setCollectionItems } from '../api/collections.js';
+import { fetchAllPages } from '../api/client.js';
 
 /**
  * Owns one collection's membership as a plain { id, title } list, loaded once from
@@ -23,9 +24,11 @@ export default function CollectionBookPicker({ collectionId }) {
 
   function load(signal) {
     setLoading(true);
-    return listCatalogueItems({ collectionId, size: 100 }, { signal })
-      .then((data) => {
-        setItems(data.items.map((item) => ({ id: item.id, title: item.title })));
+    return fetchAllPages((page) =>
+      listCatalogueItems({ collectionId, page, size: 100 }, { signal })
+    )
+      .then((loaded) => {
+        setItems(loaded.map((item) => ({ id: item.id, title: item.title })));
         setLoading(false);
       })
       .catch((error) => {

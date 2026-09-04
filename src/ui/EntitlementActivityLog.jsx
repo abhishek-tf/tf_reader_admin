@@ -50,7 +50,10 @@ export default function EntitlementActivityLog({ institutionId }) {
         const entitlementIds = new Set(entitlements.map((e) => e.id));
 
         const auditRows = await fetchAllPages((page) =>
-          listAuditLogs({ entityType: 'ENTITLEMENT', page, size: 100 })
+          listAuditLogs(
+            { entityType: 'ENTITLEMENT', page, size: 100 },
+            { signal: controller.signal }
+          )
         );
         const matched = auditRows.filter((row) => entitlementIds.has(row.entityId));
 
