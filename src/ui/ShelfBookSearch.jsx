@@ -15,7 +15,7 @@ const PAGE_SIZE = 10;
  * never disagree.
  */
 function ineligibleReason(row) {
-  if (row.entitlementStatus !== 'active') return 'Not entitled';
+  if (row.entitlementStatus !== 'ACTIVE') return 'Not entitled';
   if (row.status !== 'PUBLISHED' || row.contentState !== 'READY') return 'Not ready';
   return null;
 }

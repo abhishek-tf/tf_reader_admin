@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import DataTable from './DataTable.jsx';
 import Pagination from './Pagination.jsx';
 import FilterBar from './FilterBar.jsx';
+import RequestButton from './RequestButton.jsx';
 import { useToast } from './ToastContext.jsx';
 import { listPublishers } from '../api/publishers.js';
 import { createEntitlement } from '../api/entitlements.js';
-import { canRequestScope, renderEntitlementStatus, useInFlightIds } from './entitlementFields.jsx';
+import { renderEntitlementStatus, useInFlightIds } from './entitlementFields.jsx';
 
 const PAGE_SIZE = 20;
 
@@ -69,17 +70,9 @@ export default function PublisherRequestBrowser({ institutionId }) {
     {
       key: 'actions',
       label: '',
-      render: (row) =>
-        canRequestScope(row.entitlementStatus) ? (
-          <button
-            type="button"
-            className="btn"
-            disabled={requestingIds.has(row.id)}
-            onClick={() => handleRequest(row)}
-          >
-            Request
-          </button>
-        ) : null,
+      render: (row) => (
+        <RequestButton row={row} requestingIds={requestingIds} onRequest={handleRequest} />
+      ),
     },
   ];
 
