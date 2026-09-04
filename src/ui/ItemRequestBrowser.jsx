@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import DataTable from './DataTable.jsx';
 import Pagination from './Pagination.jsx';
 import FilterBar from './FilterBar.jsx';
+import RequestButton from './RequestButton.jsx';
 import { useToast } from './ToastContext.jsx';
 import { listCatalogueItems } from '../api/catalogueItems.js';
 import { createEntitlement } from '../api/entitlements.js';
@@ -9,7 +10,6 @@ import {
   CONTENT_TYPE_OPTIONS,
   TIER_OPTIONS,
   TIER_LABEL,
-  canRequestScope,
   renderEntitlementStatus,
   useInFlightIds,
 } from './entitlementFields.jsx';
@@ -84,26 +84,14 @@ export default function ItemRequestBrowser({ institutionId }) {
     {
       key: 'entitlementStatus',
       label: 'Your status',
-      // CatalogueItem.entitlementStatus is lowercase (none/pending/active/revoked); StatusBadge
-      // expects the uppercase EntitlementStatus enum it shares with every other status badge.
-      // renderEntitlementStatus handles the uppercasing and the null/'none' case identically
-      // to CollectionRequestBrowser's own "Your status" column.
       render: (row) => renderEntitlementStatus(row.entitlementStatus),
     },
     {
       key: 'actions',
       label: '',
-      render: (row) =>
-        canRequestScope(row.entitlementStatus) ? (
-          <button
-            type="button"
-            className="btn"
-            disabled={requestingIds.has(row.id)}
-            onClick={() => handleRequestItem(row)}
-          >
-            Request
-          </button>
-        ) : null,
+      render: (row) => (
+        <RequestButton row={row} requestingIds={requestingIds} onRequest={handleRequestItem} />
+      ),
     },
   ];
 
