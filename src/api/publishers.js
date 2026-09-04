@@ -30,11 +30,16 @@ import { api, pageQuery } from './client.js';
  * `q` searches, `status` narrows to one RecordStatus. Both are optional, and pageQuery drops
  * an empty one, so a screen can pass its filter state straight through without checking it.
  *
+ * `institutionId` (an institution admin's own id, or a super admin's explicit choice) tags each
+ * publisher with `entitlementStatus` - `none`/`pending`/`active`/`suspended`/`revoked`, resolved
+ * against that institution's PUBLISHER-scoped entitlements. Null for any other caller, not the
+ * same as `none`. Landed with Workstream 3's OPDS feed gating work.
+ *
  * There is deliberately no sort argument: the contract's list endpoint accepts only q, status,
- * page and size.
+ * institutionId, page and size.
  */
-export function listPublishers({ q, status, page, size } = {}) {
-  return api.get(`/publishers${pageQuery({ page, size, q, status })}`);
+export function listPublishers({ q, status, institutionId, page, size } = {}, opts) {
+  return api.get(`/publishers${pageQuery({ page, size, q, status, institutionId })}`, opts);
 }
 
 /** One publisher. Answers 404 NOT_FOUND for an id that does not exist. */
