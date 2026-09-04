@@ -4,9 +4,9 @@ import SelectField from './SelectField.jsx';
 import FormActions from './FormActions.jsx';
 import { createCatalogueItem, updateCatalogueItem } from '../api/catalogueItems.js';
 import { useToast } from './ToastContext.jsx';
-import { FIELDS, toFormState, validate, buildPayload } from './bookFormFields.js';
+import { FIELDS, toFormState, validate, buildPayload, isIsbnLocked } from './bookFormFields.js';
 
-function Field({ field, form, errors, saving, onChange }) {
+function Field({ field, form, errors, saving, isbnLocked, onChange }) {
   if (field.showIf && !field.showIf(form)) return null;
 
   const required =
@@ -18,7 +18,7 @@ function Field({ field, form, errors, saving, onChange }) {
     value: form[field.name],
     onChange,
     error: errors[field.name],
-    disabled: saving,
+    disabled: saving || (field.lockOnceSet && isbnLocked),
     required,
   };
 
@@ -45,6 +45,7 @@ function Field({ field, form, errors, saving, onChange }) {
 export default function BookForm({ initialItem, onSaved, onCancel }) {
   const toast = useToast();
   const isEditing = Boolean(initialItem?.id);
+  const isbnLocked = isEditing && isIsbnLocked(initialItem);
 
   const [form, setForm] = useState(() => toFormState(initialItem));
   const [errors, setErrors] = useState({});
@@ -97,6 +98,7 @@ export default function BookForm({ initialItem, onSaved, onCancel }) {
           form={form}
           errors={errors}
           saving={saving}
+          isbnLocked={isbnLocked}
           onChange={change}
         />
       ))}

@@ -1,6 +1,7 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import BookForm from '../ui/BookForm.jsx';
 import ContentUploadPanel from '../ui/ContentUploadPanel.jsx';
+import CoverUploadPanel from '../ui/CoverUploadPanel.jsx';
 import { useRecord } from './useRecord.js';
 import RecordLoadState from '../ui/RecordLoadState.jsx';
 import { getCatalogueItem } from '../api/catalogueItems.js';
@@ -11,9 +12,9 @@ import { getCatalogueItem } from '../api/catalogueItems.js';
  * `/books/new` creates. `/books/:itemId/edit` edits. BookForm does its own saving and its own
  * messages, so this screen only supplies the record and decides where a finished form goes.
  *
- * The upload panel sits in its own card below the form, on the edit address only: a book being
- * created has no id yet, so there is nothing to upload against. It is handed the record this
- * screen has already loaded, so adding it costs no extra request.
+ * The cover and content upload panels each sit in their own card below the form, on the edit
+ * address only: a book being created has no id yet, so there is nothing to upload against. Each
+ * is handed the record this screen has already loaded, so adding them costs no extra request.
  */
 export default function BookFormScreen() {
   const { itemId } = useParams();
@@ -54,6 +55,12 @@ export default function BookFormScreen() {
 
       {/* `record` as well as `editing`: the load guard above has already returned for loading
           and for failure, so this is only defensive about an endpoint answering with no body. */}
+      {editing && record ? (
+        <section className="card">
+          <CoverUploadPanel item={record} />
+        </section>
+      ) : null}
+
       {editing && record ? (
         <section className="card">
           <ContentUploadPanel item={record} />

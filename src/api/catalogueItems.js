@@ -36,3 +36,11 @@ export function uploadCatalogueItemContent(itemId, file, format) {
 export function getIngestStatus(itemId, opts) {
   return api.get(`/catalogue-items/${itemId}/ingest-status`, opts);
 }
+
+// Returns the full, refreshed CatalogueItemView, coverUrl included, so the caller has
+// something to show without a second request.
+export function uploadCatalogueItemCover(itemId, file) {
+  const form = new FormData();
+  form.append('file', file);
+  return api.post(`/catalogue-items/${itemId}/cover`, form);
+}

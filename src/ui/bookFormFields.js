@@ -50,6 +50,7 @@ export const FIELDS = [
     kind: 'text',
     placeholder: '9780367211745',
     hint: 'Optional. Audiobooks frequently have none.',
+    lockOnceSet: true,
   },
   {
     name: 'contentType',
@@ -107,6 +108,13 @@ export function toFormState(item) {
   for (const field of ARRAY_FIELDS) form[field] = (item?.[field] ?? []).join(', ');
   form.duration = item?.duration != null ? String(item.duration) : '';
   return form;
+}
+
+// The server rejects a changed ISBN on an existing book outright, so this only saves the
+// operator a round trip: locked once the record they opened already had one, checked
+// against the record as loaded rather than the live form value.
+export function isIsbnLocked(item) {
+  return Boolean(item?.isbn?.trim());
 }
 
 export function splitList(value) {
