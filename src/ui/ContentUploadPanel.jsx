@@ -58,6 +58,9 @@ const LOCKED_TIERS = ['SUBSCRIPTION', 'ELITE'];
  * server. It begins either when an upload is accepted, or on mount when the book arrives
  * already mid-ingest — somebody who opens this screen while a file is being processed should
  * not have to upload it again to see it finish.
+ *
+ * `item` always has an id by the time this renders: the Add Book screen only shows this panel
+ * once BookForm's create call has returned the new item, and Edit Book already has one.
  */
 export default function ContentUploadPanel({ item }) {
   const toast = useToast();
