@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext.jsx';
 import logo from '../assets/tf-logo-indigo.svg';
 
@@ -33,6 +34,7 @@ function initialsOf(label) {
  */
 export default function Header({ menuCollapsed = false, onToggleMenu }) {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [signingOut, setSigningOut] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const profileRef = useRef(null);
@@ -41,6 +43,12 @@ export default function Header({ menuCollapsed = false, onToggleMenu }) {
     setSigningOut(true);
     try {
       await signOut();
+      // signOut only clears who we are; it does not move off whatever page we were looking
+      // at. Left alone, RequireAuth catches the now-signed-out state on that same URL and
+      // stores it as state.from, so the next sign-in — quite possibly a different operator —
+      // would be sent back to a page their role has no business seeing. Leaving explicitly
+      // closes that gap.
+      navigate('/login', { replace: true });
     } finally {
       // The component usually unmounts before this runs, because signing out sends us to
       // the login page. Resetting anyway keeps it correct if that ever changes.

@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext.jsx';
+import NotAuthorized from '../screens/NotAuthorized.jsx';
 
 /**
  * The auth guard. Wraps every page that needs a signed-in operator.
@@ -10,9 +11,14 @@ import { useAuth } from './AuthContext.jsx';
  *
  * `replace` matters: without it the back button returns to the guarded page, which bounces
  * straight back to login and traps the user in a loop.
+ *
+ * `roles` is optional. Leave it off and this only checks that somebody is signed in, exactly
+ * as before. Pass it and a signed-in operator whose role is not in the list gets NotAuthorized
+ * rendered in place rather than sent somewhere else — redirecting to another protected route
+ * just relocates the problem, and could land on a route that role cannot use either.
  */
-export default function RequireAuth({ children }) {
-  const { signedIn, restoring } = useAuth();
+export default function RequireAuth({ children, roles }) {
+  const { user, signedIn, restoring } = useAuth();
   const location = useLocation();
 
   // On a page load we do not yet know whether there is a session to restore. Redirecting
@@ -25,5 +31,10 @@ export default function RequireAuth({ children }) {
   if (!signedIn) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
+
+  if (roles && !roles.includes(user.role)) {
+    return <NotAuthorized />;
+  }
+
   return children;
 }

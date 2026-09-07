@@ -13,7 +13,7 @@ import { NavLink } from 'react-router-dom';
  * An entry marked `soon` renders as greyed-out text rather than a link, so the shape of the
  * console is visible without pretending a screen is there.
  */
-const ENTRIES = [
+export const ENTRIES = [
   { to: '/publishers', label: 'Publishers', roles: ['SUPER_ADMIN', 'PUBLISHER_ADMIN'] },
   { to: '/books', label: 'Books', roles: ['SUPER_ADMIN', 'PUBLISHER_ADMIN'] },
   {
@@ -30,6 +30,19 @@ const ENTRIES = [
   { to: '/operators', label: 'Operators', roles: ['SUPER_ADMIN'] },
   { to: '/audit', label: 'Audit log', roles: ['SUPER_ADMIN'] },
 ];
+
+// Where "/" sends a role the moment it signs in, and where NotAuthorized's "Go to Home" sends
+// it back to. Each value is that role's first entry above, spelled out rather than derived, so
+// the landing page does not silently change if the list is ever reordered.
+const HOME_ROUTE = {
+  SUPER_ADMIN: '/publishers',
+  PUBLISHER_ADMIN: '/publishers',
+  INSTITUTION_ADMIN: '/institutions',
+};
+
+export function homeRouteForRole(role) {
+  return HOME_ROUTE[role] ?? '/login';
+}
 
 export default function SideMenu({ role, collapsed = false }) {
   const visible = ENTRIES.filter((entry) => entry.roles === null || entry.roles.includes(role));

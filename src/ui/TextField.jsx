@@ -4,6 +4,28 @@ function describedBy(hintId, errorId, hint, error) {
   return [hint ? hintId : null, error ? errorId : null].filter(Boolean).join(' ') || undefined;
 }
 
+function fieldClassName(error, endAdornment) {
+  const base = error ? 'input input-invalid' : 'input';
+  return endAdornment ? `${base} input-with-adornment` : base;
+}
+
+// Split out of TextField so an adornment (today, only the password toggle) does not add
+// branches to TextField itself — every other field takes neither path below and renders
+// exactly as before.
+function FieldControl({ multiline, rows, sharedProps, type, autoFocus, endAdornment }) {
+  if (multiline) return <textarea rows={rows} {...sharedProps} />;
+
+  const input = <input type={type} autoFocus={autoFocus} {...sharedProps} />;
+  if (!endAdornment) return input;
+
+  return (
+    <div className="input-group">
+      {input}
+      {endAdornment}
+    </div>
+  );
+}
+
 /**
  * One text input, its label, and its validation message.
  *
@@ -13,6 +35,11 @@ function describedBy(hintId, errorId, hint, error) {
  * `multiline` swaps the input for a textarea, for the one or two fields per form that need
  * more than a line. `hint` is a quiet instruction under the box, for fields like a
  * comma-separated list where the format is not obvious from the label alone.
+ *
+ * `endAdornment` is an optional control rendered inside the field, on the right — the password
+ * visibility toggle is the one caller today. Passing it wraps the input so the control has
+ * somewhere to sit; leaving it out renders exactly as before, so every other field is
+ * unaffected.
  */
 export default function TextField({
   label,
@@ -29,6 +56,7 @@ export default function TextField({
   maxLength,
   hint,
   required = false,
+  endAdornment,
 }) {
   const id = `field-${name}`;
   const errorId = `${id}-error`;
@@ -37,7 +65,7 @@ export default function TextField({
   const sharedProps = {
     id,
     name,
-    className: error ? 'input input-invalid' : 'input',
+    className: fieldClassName(error, endAdornment),
     value,
     placeholder,
     disabled,
@@ -51,11 +79,14 @@ export default function TextField({
   return (
     <div className="field">
       <FieldLabel id={id} label={label} required={required} />
-      {multiline ? (
-        <textarea rows={rows} {...sharedProps} />
-      ) : (
-        <input type={type} autoFocus={autoFocus} {...sharedProps} />
-      )}
+      <FieldControl
+        multiline={multiline}
+        rows={rows}
+        sharedProps={sharedProps}
+        type={type}
+        autoFocus={autoFocus}
+        endAdornment={endAdornment}
+      />
       {hint ? (
         <p className="muted small" id={hintId}>
           {hint}

@@ -348,6 +348,35 @@ h2 {
 .field-required {
   color: var(--bad);
 }
+.input-group {
+  position: relative;
+}
+.input-with-adornment {
+  padding-right: 36px;
+}
+.input-adornment-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 36px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--muted);
+  cursor: pointer;
+}
+.input-adornment-btn:hover {
+  color: var(--ink);
+}
+.input-adornment-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  border-radius: var(--radius);
+}
 
 .form-actions {
   display: flex;
