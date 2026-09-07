@@ -5,6 +5,7 @@ import TextField from '../ui/TextField.jsx';
 import SelectField from '../ui/SelectField.jsx';
 import StatusBadge from '../ui/StatusBadge.jsx';
 import { listPublishers } from '../api/publishers.js';
+import { useAuth } from '../auth/AuthContext.jsx';
 
 const STATUS_LABEL = {
   ACTIVE: 'Active',
@@ -30,6 +31,11 @@ const COLUMNS = [
 const EMPTY_PAGE = { items: [], page: 0, size: 0, total: 0 };
 
 export default function PublishersScreen() {
+  const { user } = useAuth();
+  // Only a super admin creates publishers. Hiding the button is not the check: the server
+  // refuses the POST either way. It just stops the console offering what would be refused.
+  const canCreate = user.role === 'SUPER_ADMIN';
+
   // `filters` is what is typed. `query` is what was submitted and is on screen.
   const [filters, setFilters] = useState({ q: '', status: '' });
   const [query, setQuery] = useState({ q: '', status: '', page: 0 });
@@ -95,9 +101,11 @@ export default function PublishersScreen() {
       <section className="card">
         <h1>Publishers</h1>
         <p className="muted">Every publisher in the catalogue, and the collections they sell.</p>
-        <Link className="btn btn-primary" to="/publishers/new">
-          New publisher
-        </Link>
+        {canCreate ? (
+          <Link className="btn btn-primary" to="/publishers/new">
+            New publisher
+          </Link>
+        ) : null}
       </section>
 
       <section className="card">
