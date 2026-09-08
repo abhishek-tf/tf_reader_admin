@@ -37,6 +37,7 @@ logs/
 
 # Review output. Local by choice: reviews in a PR diff cause arguments.
 .reviews/
+ReaderAdmin_security-review-2026-09-04.md
 
 # ── Never commit, under any circumstances ─────────────────────────────────
 *.pem

@@ -2,9 +2,15 @@ import { useState } from 'react';
 import TextField from './TextField.jsx';
 import SelectField from './SelectField.jsx';
 import FormActions from './FormActions.jsx';
+import BookCollectionPicker from './BookCollectionPicker.jsx';
 import { createCatalogueItem, updateCatalogueItem } from '../api/catalogueItems.js';
 import { useToast } from './ToastContext.jsx';
 import { FIELDS, toFormState, validate, buildPayload, isIsbnLocked } from './bookFormFields.js';
+
+// publisherId comes first so the collection picker below it is already scoped by the time the
+// operator reaches it; the rest render in FIELDS' own order either side of that split.
+const PUBLISHER_FIELD = FIELDS.find((field) => field.name === 'publisherId');
+const OTHER_FIELDS = FIELDS.filter((field) => field.name !== 'publisherId');
 
 function Field({ field, form, errors, saving, isbnLocked, onChange }) {
   if (field.showIf && !field.showIf(form)) return null;
@@ -91,7 +97,23 @@ export default function BookForm({ initialItem, onSaved, onCancel }) {
         </p>
       ) : null}
 
-      {FIELDS.map((field) => (
+      <Field
+        field={PUBLISHER_FIELD}
+        form={form}
+        errors={errors}
+        saving={saving}
+        isbnLocked={isbnLocked}
+        onChange={change}
+      />
+
+      <BookCollectionPicker
+        publisherId={form.publisherId}
+        collectionIds={form.collectionIds}
+        onChange={(collectionIds) => change('collectionIds', collectionIds)}
+        disabled={saving}
+      />
+
+      {OTHER_FIELDS.map((field) => (
         <Field
           key={field.name}
           field={field}

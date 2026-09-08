@@ -27,13 +27,6 @@ export const FIELDS = [
     placeholder: 'pub_rtlg',
     required: true,
   },
-  {
-    name: 'collectionIds',
-    label: 'Collection IDs',
-    kind: 'text',
-    placeholder: 'col_law2024, col_env2024',
-    hint: 'Comma separated. Leave blank for none.',
-  },
   { name: 'title', label: 'Title', kind: 'text', maxLength: 300, required: true },
   { name: 'subtitle', label: 'Subtitle', kind: 'text', maxLength: 300 },
   { name: 'authors', label: 'Authors', kind: 'text', hint: 'Comma separated.' },
@@ -86,7 +79,7 @@ const ISBN_PATTERN = /^(97[89])?[0-9]{9}[0-9X]$/;
 
 // Comma-separated text is the plain, obvious stand-in for the array fields the contract
 // wants. Empty entries from stray commas are dropped rather than sent as blank strings.
-const ARRAY_FIELDS = ['collectionIds', 'authors', 'editors', 'narrators', 'subjects'];
+const ARRAY_FIELDS = ['authors', 'editors', 'narrators', 'subjects'];
 const SCALAR_FIELDS = [
   'publisherId',
   'title',
@@ -107,7 +100,14 @@ export function toFormState(item) {
   for (const field of SCALAR_FIELDS) form[field] = item?.[field] ?? '';
   for (const field of ARRAY_FIELDS) form[field] = (item?.[field] ?? []).join(', ');
   form.duration = item?.duration != null ? String(item.duration) : '';
+  // Picked through BookCollectionPicker, not typed, so this stays the real array the picker
+  // and the payload both use - never a comma string like the other array fields.
+  form.collectionIds = collectionIdsFrom(item);
   return form;
+}
+
+function collectionIdsFrom(item) {
+  return item?.collectionIds ?? [];
 }
 
 // The server rejects a changed ISBN on an existing book outright, so this only saves the
@@ -143,7 +143,7 @@ export function validate(form) {
 export function buildPayload(form) {
   return {
     publisherId: form.publisherId.trim(),
-    collectionIds: splitList(form.collectionIds),
+    collectionIds: form.collectionIds,
     title: form.title.trim(),
     subtitle: form.subtitle.trim() || undefined,
     authors: splitList(form.authors),

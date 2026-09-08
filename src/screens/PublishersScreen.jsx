@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import DataTable from '../ui/DataTable.jsx';
+import Pagination from '../ui/Pagination.jsx';
 import TextField from '../ui/TextField.jsx';
 import SelectField from '../ui/SelectField.jsx';
 import StatusBadge from '../ui/StatusBadge.jsx';
@@ -87,7 +88,6 @@ export default function PublishersScreen() {
   const total = result.total;
   const size = result.size;
   const currentPage = pageResult ? result.page : query.page;
-  const lastPage = size > 0 ? Math.ceil(total / size) - 1 : 0;
   const searching = query.q !== '' || query.status !== '';
 
   return (
@@ -145,27 +145,7 @@ export default function PublishersScreen() {
         />
 
         {!error && total > 0 ? (
-          <div className="row-buttons">
-            <button
-              type="button"
-              className="btn"
-              onClick={() => goToPage(currentPage - 1)}
-              disabled={loading || currentPage === 0}
-            >
-              Previous
-            </button>
-            <span className="small">
-              Page {currentPage + 1} of {lastPage + 1}
-            </span>
-            <button
-              type="button"
-              className="btn"
-              onClick={() => goToPage(currentPage + 1)}
-              disabled={loading || currentPage >= lastPage}
-            >
-              Next
-            </button>
-          </div>
+          <Pagination page={currentPage} size={size} total={total} onPageChange={goToPage} />
         ) : null}
       </section>
     </div>

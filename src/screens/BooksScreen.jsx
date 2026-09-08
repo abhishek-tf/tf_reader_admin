@@ -4,6 +4,8 @@ import DataTable from '../ui/DataTable.jsx';
 import Pagination from '../ui/Pagination.jsx';
 import FilterBar from '../ui/FilterBar.jsx';
 import { listCatalogueItems } from '../api/catalogueItems.js';
+import { listPublishers } from '../api/publishers.js';
+import { fetchAllPages } from '../api/client.js';
 
 const PAGE_SIZE = 20;
 
@@ -36,6 +38,32 @@ export default function BooksScreen() {
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [page, setPage] = useState(0);
   const [list, setList] = useState({ items: [], total: 0, loading: true, error: null });
+  const [suspendedPublisherIds, setSuspendedPublisherIds] = useState(() => new Set());
+
+  // Loaded once, not re-run per page or filter change: matches what the backend already does
+  // for entitlement checks and OPDS feeds, where a suspended publisher's whole catalogue
+  // disappears. GET /catalogue-items has no publisher-status filter of its own, so this is a
+  // client-side stand-in - rows are dropped after the fact, so `list.total` and the pager below
+  // still count them. The hiddenCount note further down says so rather than leaving a page that
+  // looks short, or empty, unexplained.
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchAllPages((statusPage) =>
+      listPublishers(
+        { status: 'SUSPENDED', page: statusPage, size: 100 },
+        { signal: controller.signal }
+      )
+    )
+      .then((suspended) => {
+        setSuspendedPublisherIds(new Set(suspended.map((publisher) => publisher.id)));
+      })
+      .catch((error) => {
+        if (error.name === 'AbortError') return;
+        // Not worth failing the whole screen over: worst case a suspended publisher's books
+        // stay visible until this succeeds on a retry.
+      });
+    return () => controller.abort();
+  }, []);
 
   function load(signal) {
     setList((current) => ({ ...current, loading: true, error: null }));
@@ -60,6 +88,12 @@ export default function BooksScreen() {
     setFilters((current) => ({ ...current, ...patch }));
     setPage(0);
   }
+
+  const visibleItems = list.items.filter((item) => !suspendedPublisherIds.has(item.publisherId));
+  // The server's own total still counts suspended-publisher rows this filter then drops, so a
+  // page can show fewer than PAGE_SIZE, and one where every row was hidden must say so rather
+  // than claim there is nothing to match - there is, it is just not shown.
+  const hiddenCount = list.items.length - visibleItems.length;
 
   const columns = [
     { key: 'title', label: 'Title' },
@@ -148,12 +182,22 @@ export default function BooksScreen() {
 
         <DataTable
           columns={columns}
-          rows={list.items}
+          rows={visibleItems}
           loading={list.loading}
           error={list.error}
-          emptyMessage="No books match these filters."
+          emptyMessage={
+            hiddenCount > 0
+              ? 'Every book on this page belongs to a suspended publisher, so none are shown.'
+              : 'No books match these filters.'
+          }
           onRetry={() => load()}
         />
+        {!list.error && !list.loading && hiddenCount > 0 ? (
+          <p className="muted small">
+            This page also hides {hiddenCount} book{hiddenCount === 1 ? '' : 's'} whose publisher is
+            suspended.
+          </p>
+        ) : null}
         {/* Guarded like every other list: unguarded, Previous/Next and "Page 1 of 1 · 0 total"
             rendered underneath the loading row and underneath the error message. */}
         {!list.error && list.total > 0 ? (
