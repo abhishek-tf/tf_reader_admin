@@ -8,6 +8,9 @@ import { listPublishers } from '../api/publishers.js';
 import { fetchAllPages } from '../api/client.js';
 
 const PAGE_SIZE = 20;
+// Server-side page size for the walk below - deliberately larger than PAGE_SIZE, since this
+// walks the whole matching set once per filter change rather than one page at a time.
+const WALK_PAGE_SIZE = 100;
 
 const TIER_LABEL = {
   OPEN_ACCESS: 'Open access',
@@ -37,15 +40,12 @@ const EMPTY_FILTERS = { publisherId: '', collectionId: '', contentType: '', acce
 export default function BooksScreen() {
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [page, setPage] = useState(0);
-  const [list, setList] = useState({ items: [], total: 0, loading: true, error: null });
+  const [list, setList] = useState({ items: [], loading: true, error: null });
   const [suspendedPublisherIds, setSuspendedPublisherIds] = useState(() => new Set());
 
   // Loaded once, not re-run per page or filter change: matches what the backend already does
   // for entitlement checks and OPDS feeds, where a suspended publisher's whole catalogue
-  // disappears. GET /catalogue-items has no publisher-status filter of its own, so this is a
-  // client-side stand-in - rows are dropped after the fact, so `list.total` and the pager below
-  // still count them. The hiddenCount note further down says so rather than leaving a page that
-  // looks short, or empty, unexplained.
+  // disappears.
   useEffect(() => {
     const controller = new AbortController();
     fetchAllPages((statusPage) =>
@@ -59,18 +59,28 @@ export default function BooksScreen() {
       })
       .catch((error) => {
         if (error.name === 'AbortError') return;
-        // Not worth failing the whole screen over: worst case a suspended publisher's books
-        // stay visible until this succeeds on a retry.
+        // No retry, and this effect never runs again after mount: not worth failing the
+        // whole screen over, but be accurate about the cost - if this call fails, suspended
+        // publishers' books stay visible for as long as this screen stays mounted, full stop.
       });
     return () => controller.abort();
   }, []);
 
+  // Walks every server page matching the current filters, once, rather than fetching one
+  // page of PAGE_SIZE at a time. GET /catalogue-items has no way to exclude a suspended
+  // publisher's books, so filtering has to happen client-side - and filtering one already-
+  // paginated slice at a time is what let the pager's own total and page count drift from
+  // what was actually shown. Filtering the whole matching set before paginating it, instead
+  // of after, is what keeps them honest: `total` below is the true reachable count, and every
+  // page (bar the last) is a full PAGE_SIZE. This app's catalogue is small enough in practice
+  // for that whole-set walk to cost little; a catalogue large enough for that not to hold
+  // would need the exclusion done server-side instead, not a bigger version of this workaround.
   function load(signal) {
     setList((current) => ({ ...current, loading: true, error: null }));
-    return listCatalogueItems({ ...filters, page, size: PAGE_SIZE }, { signal })
-      .then((data) =>
-        setList({ items: data.items, total: data.total, loading: false, error: null })
-      )
+    return fetchAllPages((walkPage) =>
+      listCatalogueItems({ ...filters, page: walkPage, size: WALK_PAGE_SIZE }, { signal })
+    )
+      .then((items) => setList({ items, loading: false, error: null }))
       .catch((error) => {
         if (error.name === 'AbortError') return;
         setList((current) => ({ ...current, loading: false, error }));
@@ -81,8 +91,8 @@ export default function BooksScreen() {
     const controller = new AbortController();
     load(controller.signal);
     return () => controller.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- load reads filters/page from state directly
-  }, [filters, page]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load reads filters from state directly
+  }, [filters]);
 
   function updateFilters(patch) {
     setFilters((current) => ({ ...current, ...patch }));
@@ -90,10 +100,10 @@ export default function BooksScreen() {
   }
 
   const visibleItems = list.items.filter((item) => !suspendedPublisherIds.has(item.publisherId));
-  // The server's own total still counts suspended-publisher rows this filter then drops, so a
-  // page can show fewer than PAGE_SIZE, and one where every row was hidden must say so rather
-  // than claim there is nothing to match - there is, it is just not shown.
   const hiddenCount = list.items.length - visibleItems.length;
+  // Paginated here, over the already-filtered set, not by the server: `page` only slices
+  // what is already loaded, so changing it does not refetch anything.
+  const pageItems = visibleItems.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
 
   const columns = [
     { key: 'title', label: 'Title' },
@@ -182,26 +192,33 @@ export default function BooksScreen() {
 
         <DataTable
           columns={columns}
-          rows={visibleItems}
+          rows={pageItems}
           loading={list.loading}
           error={list.error}
           emptyMessage={
-            hiddenCount > 0
-              ? 'Every book on this page belongs to a suspended publisher, so none are shown.'
+            hiddenCount > 0 && visibleItems.length === 0
+              ? 'Every book matching these filters belongs to a suspended publisher, so none are shown.'
               : 'No books match these filters.'
           }
           onRetry={() => load()}
         />
-        {!list.error && !list.loading && hiddenCount > 0 ? (
+        {!list.error && !list.loading && hiddenCount > 0 && visibleItems.length > 0 ? (
           <p className="muted small">
-            This page also hides {hiddenCount} book{hiddenCount === 1 ? '' : 's'} whose publisher is
-            suspended.
+            Also hidden: {hiddenCount} more book{hiddenCount === 1 ? '' : 's'} matching these
+            filters, whose publisher is suspended.
           </p>
         ) : null}
         {/* Guarded like every other list: unguarded, Previous/Next and "Page 1 of 1 · 0 total"
-            rendered underneath the loading row and underneath the error message. */}
-        {!list.error && list.total > 0 ? (
-          <Pagination page={page} size={PAGE_SIZE} total={list.total} onPageChange={setPage} />
+            rendered underneath the loading row and underneath the error message. `total` is
+            visibleItems.length, not the server's raw count, so this always matches what
+            paging through actually reaches. */}
+        {!list.error && visibleItems.length > 0 ? (
+          <Pagination
+            page={page}
+            size={PAGE_SIZE}
+            total={visibleItems.length}
+            onPageChange={setPage}
+          />
         ) : null}
       </section>
     </div>
