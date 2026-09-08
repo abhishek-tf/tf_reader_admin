@@ -155,7 +155,10 @@ export default function LoginScreen() {
         />
 
         <FormActions
-          onCancel={() => setForm({ email: '', password: '' })}
+          onCancel={() => {
+            setForm({ email: '', password: '' });
+            setErrors({});
+          }}
           saving={signingIn}
           saveLabel="Sign in"
           cancelLabel="Clear"
