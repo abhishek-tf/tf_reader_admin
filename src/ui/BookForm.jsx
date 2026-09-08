@@ -2,9 +2,15 @@ import { useState } from 'react';
 import TextField from './TextField.jsx';
 import SelectField from './SelectField.jsx';
 import FormActions from './FormActions.jsx';
+import BookCollectionPicker from './BookCollectionPicker.jsx';
 import { createCatalogueItem, updateCatalogueItem } from '../api/catalogueItems.js';
 import { useToast } from './ToastContext.jsx';
 import { FIELDS, toFormState, validate, buildPayload, isIsbnLocked } from './bookFormFields.js';
+
+// publisherId comes first so the collection picker below it is already scoped by the time the
+// operator reaches it; the rest render in FIELDS' own order either side of that split.
+const PUBLISHER_FIELD = FIELDS.find((field) => field.name === 'publisherId');
+const OTHER_FIELDS = FIELDS.filter((field) => field.name !== 'publisherId');
 
 function Field({ field, form, errors, saving, isbnLocked, onChange }) {
   if (field.showIf && !field.showIf(form)) return null;
@@ -50,6 +56,10 @@ export default function BookForm({ initialItem, onSaved, onCancel }) {
   const [form, setForm] = useState(() => toFormState(initialItem));
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
+  // True from the moment publisherId changes until BookCollectionPicker's own prune has run
+  // against it. Submit must stay blocked for that whole stretch - Save clicked before it
+  // settles would still send whatever collection id was picked under the previous publisher.
+  const [collectionsBusy, setCollectionsBusy] = useState(false);
 
   function change(name, value) {
     setForm((current) => ({ ...current, [name]: value }));
@@ -58,6 +68,11 @@ export default function BookForm({ initialItem, onSaved, onCancel }) {
 
   async function handleSubmit(event) {
     event.preventDefault();
+    // Belt and suspenders alongside FormActions' own disabled state: the button being
+    // disabled is what an operator actually sees, this is what stops a submit that somehow
+    // still fires while a publisher change is still being reconciled.
+    if (collectionsBusy) return;
+
     const found = validate(form);
     setErrors(found);
     if (Object.keys(found).length > 0) return;
@@ -91,7 +106,24 @@ export default function BookForm({ initialItem, onSaved, onCancel }) {
         </p>
       ) : null}
 
-      {FIELDS.map((field) => (
+      <Field
+        field={PUBLISHER_FIELD}
+        form={form}
+        errors={errors}
+        saving={saving}
+        isbnLocked={isbnLocked}
+        onChange={change}
+      />
+
+      <BookCollectionPicker
+        publisherId={form.publisherId}
+        collectionIds={form.collectionIds}
+        onChange={(collectionIds) => change('collectionIds', collectionIds)}
+        onBusyChange={setCollectionsBusy}
+        disabled={saving}
+      />
+
+      {OTHER_FIELDS.map((field) => (
         <Field
           key={field.name}
           field={field}
@@ -103,7 +135,12 @@ export default function BookForm({ initialItem, onSaved, onCancel }) {
         />
       ))}
 
-      <FormActions onCancel={onCancel} saving={saving} saveLabel={isEditing ? 'Save' : 'Create'} />
+      <FormActions
+        onCancel={onCancel}
+        saving={saving}
+        disabled={collectionsBusy}
+        saveLabel={isEditing ? 'Save' : 'Create'}
+      />
     </form>
   );
 }

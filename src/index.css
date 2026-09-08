@@ -55,6 +55,9 @@ body,
 #root {
   height: 100%;
   margin: 0;
+  /* Stops the rubber-band bounce past the top/bottom edge, which otherwise shows
+     background through as white space with nothing rendered there. */
+  overscroll-behavior-y: none;
 }
 
 body {
