@@ -44,7 +44,7 @@ export function homeRouteForRole(role) {
   return HOME_ROUTE[role] ?? '/login';
 }
 
-export default function SideMenu({ role, collapsed = false }) {
+export default function SideMenu({ role, collapsed = false, onNavigate }) {
   const visible = ENTRIES.filter((entry) => entry.roles === null || entry.roles.includes(role));
 
   return (
@@ -68,6 +68,7 @@ export default function SideMenu({ role, collapsed = false }) {
                 <NavLink
                   to={entry.to}
                   className={({ isActive }) => (isActive ? 'side-on' : undefined)}
+                  onClick={onNavigate}
                 >
                   {entry.label}
                 </NavLink>

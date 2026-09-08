@@ -298,6 +298,24 @@ h2 {
  * what decides whether the menu starts collapsed, this is what decides what "collapsed"
  * and "expanded" look like once it has. Change one, change the other. */
 @media (max-width: 768px) {
+  /* The header has to stay pinned too, not just the drawer below it: the page's normal
+     scroll would otherwise carry the header - and its hamburger - off-screen while the
+     drawer, already fixed to the viewport, stays exactly where it was, leaving it open
+     with no visible way to close it until the operator scrolls back up. z-index above the
+     drawer's, so the toggle stays reachable and on top of it, not underneath. */
+  .head {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 31;
+  }
+  /* Everything below the header has to make room for it now that it is out of `.shell`'s
+     normal flow, or content starts underneath it instead of below it. */
+  .body {
+    margin-top: var(--header-height);
+  }
+
   /* Not just `.side`: that has the same specificity as `.side-collapsed` and sits later in
      the file, so it would win over `.side-collapsed`'s `width: 0` and hold the drawer open
      even when it is meant to be shut. */
