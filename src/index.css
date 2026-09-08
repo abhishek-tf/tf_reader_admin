@@ -24,6 +24,11 @@
   --bad-bg: #ffebf0; /* Coral Neutral */
   --radius: 4px;
   --gap: 16px;
+  /* .head's own fixed height. Named rather than left as a bare 60px in both places: the
+     mobile drawer below has to start exactly where the header ends, and a variable is what
+     keeps that true if the header's height ever changes, instead of two numbers that only
+     happen to agree. */
+  --header-height: 60px;
   --sans: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
     sans-serif;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -117,7 +122,7 @@ h2 {
   justify-content: space-between;
   gap: var(--gap);
   padding: 0 var(--gap);
-  height: 60px;
+  height: var(--header-height);
   background: var(--panel);
   border-bottom: 1px solid var(--line);
 }
@@ -280,6 +285,64 @@ h2 {
   flex: 1;
   min-width: 0;
   padding: var(--gap);
+}
+
+/* ── mobile and tablet: desktop stays exactly as above, unchanged ───────────
+ * Below this width the 200px sidebar would leave too little room to be usable, so it
+ * becomes an overlay instead of a permanent column - `position: fixed` takes it out of
+ * `.body`'s flex flow, so `.content` claims the full width on its own with no extra rule
+ * needed. Reuses the same collapse toggle and the same `.side-collapsed` class that already
+ * exists for desktop; only what "expanded" looks like changes at this width.
+ *
+ * 768px here has to match AppLayout.jsx's own matchMedia('(max-width: 768px)') - that is
+ * what decides whether the menu starts collapsed, this is what decides what "collapsed"
+ * and "expanded" look like once it has. Change one, change the other. */
+@media (max-width: 768px) {
+  /* Not just `.side`: that has the same specificity as `.side-collapsed` and sits later in
+     the file, so it would win over `.side-collapsed`'s `width: 0` and hold the drawer open
+     even when it is meant to be shut. */
+  .side:not(.side-collapsed) {
+    position: fixed;
+    top: var(--header-height);
+    bottom: 0;
+    left: 0;
+    z-index: 30;
+    width: min(260px, 85vw);
+    overflow-y: auto;
+    box-shadow: 2px 0 8px rgb(0 0 0 / 20%);
+  }
+
+  /* The subtitle is the first thing to go: dropping it is what keeps "TF Reader" on one
+     line instead of wrapping inside the fixed-height header and clipping. */
+  .head-sub {
+    display: none;
+  }
+
+  /* Previous/status/Next wrapped mid-phrase with no wrap rule at all; centering it on wrap
+     reads better than the default left edge the flex row would otherwise leave it at. */
+  .pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .form-actions {
+    flex-wrap: wrap;
+  }
+}
+
+/* Phone width specifically, not the 768px tablet cutoff above: at 768px the header already
+ * fits. The wordmark logo is ~188px wide even at its 45px brand-guideline minimum height, and
+ * `.head` never wraps, so logo + "TF Reader" + the profile control together push past a phone
+ * width and the profile control is pushed off the right edge of the page. Hiding the logo
+ * keeps it at its required height everywhere it does show rather than shrinking it below
+ * spec; the avatar's initials still say who is signed in without the full name's width. */
+@media (max-width: 500px) {
+  .head-logo {
+    display: none;
+  }
+  .profile-name {
+    display: none;
+  }
 }
 
 .stack {
