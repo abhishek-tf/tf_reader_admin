@@ -1,0 +1,18 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Same trick as vite.config.js's dev proxy: send /api through Netlify to the backend so the
+# browser only ever sees one origin. That is one origin, no CORS to configure, and no base
+# URL to switch between dev and build.
+[[redirects]]
+  from = "/api/*"
+  to = "https://tf-reader-backend-temp-suqu.onrender.com/api/:splat"
+  status = 200
+  force = true
+
+# react-router-dom does client-side routing, so a reload on a deep path has to come back here.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
