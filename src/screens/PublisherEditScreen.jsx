@@ -17,7 +17,11 @@ export default function PublisherEditScreen() {
 
   const backToPublisher = `/publishers/${publisherId}`;
 
-  if (loading || error) {
+  // Only while there's no record at all yet — once one has loaded, a stray re-fetch flipping
+  // `loading` back to true must not blank out a form the operator is mid-edit on.
+  // `RecordLoadState` renders bare (no modal chrome around it), so gating on `loading` alone
+  // meant any re-render that revisited this branch made the whole panel appear to vanish.
+  if (!record && (loading || error)) {
     return (
       <RecordLoadState
         loading={loading}
@@ -33,8 +37,6 @@ export default function PublisherEditScreen() {
     <div className="stack">
       <PublisherForm
         publisher={record}
-        backTo={backToPublisher}
-        backLabel="Back to the publisher"
         onSaved={() => navigate(backToPublisher)}
         onCancel={() => navigate(backToPublisher)}
       />

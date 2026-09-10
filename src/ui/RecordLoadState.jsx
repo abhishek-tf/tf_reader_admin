@@ -1,4 +1,7 @@
 import { Link } from 'react-router-dom';
+import Card from './Card.jsx';
+import Button from './Button.jsx';
+import Icon from './Icon.jsx';
 
 /**
  * What a form screen shows while its record is loading, or when loading it failed.
@@ -16,18 +19,21 @@ export default function RecordLoadState({ loading, error, onRetry, backTo, backL
   }
 
   return (
-    <div className="card">
-      <h1>Cannot open this record</h1>
-      <p className="muted">{error.friendly ?? error.message ?? 'Something went wrong.'}</p>
-      {error.traceId ? <p className="trace">Trace {error.traceId}</p> : null}
+    <Card>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-sm)' }}>
+        <Icon name="error" style={{ color: 'var(--bad)', fontSize: 24 }} />
+        <div>
+          <h1>Cannot open this record</h1>
+          <p className="muted">{error.friendly ?? error.message ?? 'Something went wrong.'}</p>
+          {error.traceId ? <p className="trace">Trace {error.traceId}</p> : null}
+        </div>
+      </div>
       <div className="row-buttons">
-        <button type="button" className="btn" onClick={onRetry}>
-          Try again
-        </button>
+        <Button onClick={onRetry}>Try again</Button>
         <Link className="btn" to={backTo}>
           {backLabel}
         </Link>
       </div>
-    </div>
+    </Card>
   );
 }

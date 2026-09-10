@@ -7,16 +7,16 @@ import { listCatalogueItems } from '../api/catalogueItems.js';
 const PAGE_SIZE = 10;
 
 /**
- * Search the whole catalogue and add a book to a collection. Unrestricted across publishers -
- * CollectionAdminService.setItems validates only that an id is a real catalogue item, nothing
- * about it matching the collection's own publisher - so this does not invent a rule the backend
- * does not enforce. No entitlement gating either: a collection has no institution of its own for
- * that check to be about. A not-yet-ready book can still be added - the backend does not block
- * it, and it stays invisible in every feed until it is PUBLISHED and READY anyway, the same rule
- * that already protects a stale shelf entry - but a warning next to Add says so, since the plan
- * calls for reusing that readiness signal even where there is nothing to block.
+ * Search a collection's own publisher and add a book to the collection. Scoped by
+ * `publisherId` — the same filter BooksScreen already offers on this endpoint — so a
+ * collection only ever picks up books from the publisher it belongs to. No entitlement
+ * gating: a collection has no institution of its own for that check to be about. A
+ * not-yet-ready book can still be added - the backend does not block it, and it stays
+ * invisible in every feed until it is PUBLISHED and READY anyway, the same rule that already
+ * protects a stale shelf entry - but a warning next to Add says so, since the plan calls for
+ * reusing that readiness signal even where there is nothing to block.
  */
-export default function CollectionBookSearch({ pickedIds, onAdd, disabled }) {
+export default function CollectionBookSearch({ publisherId, pickedIds, onAdd, disabled }) {
   const [q, setQ] = useState('');
   const [page, setPage] = useState(0);
   const [results, setResults] = useState({ list: [], total: 0, loading: true, error: null });
@@ -24,7 +24,7 @@ export default function CollectionBookSearch({ pickedIds, onAdd, disabled }) {
   useEffect(() => {
     const controller = new AbortController();
     setResults((c) => ({ ...c, loading: true, error: null }));
-    listCatalogueItems({ q, page, size: PAGE_SIZE }, { signal: controller.signal })
+    listCatalogueItems({ publisherId, q, page, size: PAGE_SIZE }, { signal: controller.signal })
       .then((data) =>
         setResults({ list: data.items, total: data.total, loading: false, error: null })
       )
@@ -33,7 +33,7 @@ export default function CollectionBookSearch({ pickedIds, onAdd, disabled }) {
         setResults((c) => ({ ...c, loading: false, error }));
       });
     return () => controller.abort();
-  }, [q, page]);
+  }, [publisherId, q, page]);
 
   const columns = [
     { key: 'title', label: 'Title' },

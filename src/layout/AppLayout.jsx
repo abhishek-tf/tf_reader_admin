@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import Header from './Header.jsx';
 import SideMenu from './SideMenu.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
+import logo from '../assets/tf-logo-indigo.svg';
 
 // Has to match index.css's own `@media (max-width: 768px)` on `.side` - that rule is what
 // "collapsed" and "expanded" actually look like at this width; everything below only
@@ -68,14 +69,39 @@ export default function AppLayout() {
     if (contentRef.current) contentRef.current.inert = contentInert;
   }, [contentInert]);
 
+  // One fixed sidebar element throughout, never two different layouts: `menuCollapsed` slides
+  // it off-screen (translateX) on both desktop and mobile. What differs by width is what
+  // "visible" costs the rest of the page — on desktop the content's left padding makes room
+  // for it, on mobile the sidebar overlays on top of unindented content instead.
+  const sidebarVisible = !menuCollapsed;
+
   return (
     <div className="shell">
-      <Header
-        menuCollapsed={menuCollapsed}
-        onToggleMenu={() => setMenuCollapsed((collapsed) => !collapsed)}
-      />
-      <div className="body">
-        <SideMenu role={user?.role} collapsed={menuCollapsed} onNavigate={handleNavigate} />
+      <aside className={sidebarVisible ? 'app-sidebar app-sidebar-open' : 'app-sidebar'}>
+        <div className="app-sidebar-top">
+          <div className="app-sidebar-brand">
+            {/* The logo art already reads "Taylor & Francis, by informa" on its own — the
+                header already says "TF Reader admin console" — so this is the mark alone,
+                once, rather than repeating either name next to it. It's a two-tone mark (navy
+                circle and wordmark, white ship-and-lamp detail inside the circle) rather than
+                one flat colour, so a CSS invert to "make it white" turns both tones white and
+                erases the detail — that was the solid white blob. A small white plate behind
+                it instead shows the real logo, in its real colours, regardless of the dark
+                sidebar around it. */}
+            <span className="app-sidebar-brand-plate">
+              <img src={logo} alt="Taylor & Francis, by Informa" className="app-sidebar-brand-logo" />
+            </span>
+          </div>
+          <div className="app-sidebar-section-label">Catalogue Operations</div>
+          <SideMenu role={user?.role} collapsed={false} onNavigate={handleNavigate} />
+        </div>
+      </aside>
+      <div className={sidebarVisible && !isMobileWidth ? 'app-shell-offset' : undefined}>
+        <Header
+          menuCollapsed={menuCollapsed}
+          fullWidth={!sidebarVisible || isMobileWidth}
+          onToggleMenu={() => setMenuCollapsed((collapsed) => !collapsed)}
+        />
         <main className="content" ref={contentRef}>
           <Outlet />
         </main>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import FieldLabel from './FieldLabel.jsx';
+import Icon from './Icon.jsx';
 import { uploadCatalogueItemCover } from '../api/catalogueItems.js';
 import { useToast } from './ToastContext.jsx';
 
@@ -17,10 +17,18 @@ const MAX_BYTES = 5 * 1024 * 1024;
  *
  * Lives beside the metadata form rather than inside it, the same reasoning as
  * ContentUploadPanel: a book being created has no id yet, so there is nothing to upload to.
+ *
+ * Laid out as Stitch's "Cover Artwork" card — a thumbnail beside a Choose File control — but
+ * the thumbnail shows the real cover already on record (or a placeholder, if there is none)
+ * rather than the fixed mockup image Stitch's own drawer shows, and the hint states this
+ * panel's actual size cap rather than Stitch's resolution recommendation, which nothing here
+ * enforces.
+ *
+ * Choosing a file uploads it immediately — there is no separate Upload button, since picking
+ * again is the only thing an operator could otherwise do in between.
  */
 export default function CoverUploadPanel({ item }) {
   const toast = useToast();
-  const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
   const [uploaded, setUploaded] = useState(null);
@@ -29,38 +37,31 @@ export default function CoverUploadPanel({ item }) {
   // truth until an upload actually returns something newer.
   const current = uploaded ?? item;
 
-  function handleFileChange(event) {
+  async function handleFileChange(event) {
     const chosen = event.target.files?.[0] ?? null;
     setError(null);
+    // Clearing the input means picking the *same* file again still fires a change event,
+    // which it would not if the element kept holding it.
+    event.target.value = '';
+    if (!chosen) return;
 
     // A name proves nothing about the bytes, so the backend stays the real validation. This is
     // a courtesy check only.
-    if (chosen && !chosen.type.startsWith('image/')) {
+    if (!chosen.type.startsWith('image/')) {
       toast.failed('Choose an image file.');
-      event.target.value = '';
-      setFile(null);
       return;
     }
 
-    if (chosen && chosen.size > MAX_BYTES) {
+    if (chosen.size > MAX_BYTES) {
       toast.failed(`File exceeds the ${MAX_BYTES / 1024 / 1024} MB upload limit.`);
-      event.target.value = '';
-      setFile(null);
       return;
     }
 
-    setFile(chosen);
-  }
-
-  async function handleUpload() {
-    if (uploading || !file) return;
-    setError(null);
     setUploading(true);
     try {
-      const refreshed = await uploadCatalogueItemCover(item.id, file);
+      const refreshed = await uploadCatalogueItemCover(item.id, chosen);
       setUploaded(refreshed);
       toast.saved('Cover uploaded.');
-      setFile(null);
     } catch (cause) {
       // The same split BookForm and ContentUploadPanel make: a validation message belongs
       // next to the field, and anything else is a toast, which is what carries the traceId.
@@ -75,50 +76,41 @@ export default function CoverUploadPanel({ item }) {
   }
 
   return (
-    <div>
-      <h2>Cover image</h2>
-
-      {current.coverUrl ? (
-        <p>
-          <img src={current.coverUrl} alt="Cover preview" className="cover-preview" />
-        </p>
-      ) : null}
-
-      <div className="field">
-        <FieldLabel id={FILE_ID} label="Choose an image" />
-        <input
-          id={FILE_ID}
-          name="file"
-          type="file"
-          accept="image/*"
-          className="input"
-          disabled={uploading}
-          onChange={handleFileChange}
-          aria-invalid={error ? 'true' : undefined}
-          aria-describedby={error ? `${HINT_ID} ${ERROR_ID}` : HINT_ID}
-        />
+    <div className="cover-upload-card">
+      <div className="cover-upload-thumb">
+        {current.coverUrl ? (
+          <img src={current.coverUrl} alt="Cover preview" />
+        ) : (
+          <Icon name="image" />
+        )}
+      </div>
+      <div className="cover-upload-body">
+        <span className="cover-upload-title">Upload cover image</span>
         <p className="muted small" id={HINT_ID}>
-          Up to {MAX_BYTES / 1024 / 1024} MB.
+          JPEG, PNG or WebP, up to {MAX_BYTES / 1024 / 1024} MB.
         </p>
+        <div className="cover-upload-choose">
+          <label className="btn upload-choose-btn" htmlFor={FILE_ID}>
+            {uploading ? 'Uploading...' : 'Choose file'}
+          </label>
+          <input
+            id={FILE_ID}
+            name="file"
+            type="file"
+            className="file-input-hidden"
+            accept="image/*"
+            disabled={uploading}
+            onChange={handleFileChange}
+            aria-invalid={error ? 'true' : undefined}
+            aria-describedby={error ? `${HINT_ID} ${ERROR_ID}` : HINT_ID}
+          />
+          <span className="muted small">{uploading ? '' : 'No file chosen'}</span>
+        </div>
         {error ? (
           <p className="field-error" id={ERROR_ID} role="alert">
             {error}
           </p>
         ) : null}
-      </div>
-
-      {file ? <p className="muted small">Selected: {file.name}</p> : null}
-
-      <div className="form-actions">
-        {/* type="button" so it can never submit a form this panel is rendered next to. */}
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={handleUpload}
-          disabled={!file || uploading}
-        >
-          {uploading ? 'Uploading...' : 'Upload'}
-        </button>
       </div>
     </div>
   );

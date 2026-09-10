@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext.jsx';
-import logo from '../assets/tf-logo-indigo.svg';
+import Icon from '../ui/Icon.jsx';
+import Button from '../ui/Button.jsx';
 
 // SUPER_ADMIN is not a phrase to show an operator.
 const ROLE_LABEL = {
@@ -32,7 +33,7 @@ function initialsOf(label) {
  * itself. Sign out is disabled while it is running, because a second click during the request
  * would fire a second revoke against a token that is already gone.
  */
-export default function Header({ menuCollapsed = false, onToggleMenu }) {
+export default function Header({ menuCollapsed = false, fullWidth = false, onToggleMenu }) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [signingOut, setSigningOut] = useState(false);
@@ -80,9 +81,11 @@ export default function Header({ menuCollapsed = false, onToggleMenu }) {
   }, [menuOpen]);
 
   const displayName = user ? user.name || user.email : '';
+  const headClassName = fullWidth ? 'head head-full' : 'head';
+  const toggleLabel = menuCollapsed ? 'Show the menu' : 'Hide the menu';
 
   return (
-    <header className="head">
+    <header className={headClassName}>
       <div className="head-brand">
         {onToggleMenu ? (
           <button
@@ -91,16 +94,13 @@ export default function Header({ menuCollapsed = false, onToggleMenu }) {
             onClick={onToggleMenu}
             aria-expanded={!menuCollapsed}
             aria-controls="side-menu"
-            aria-label={menuCollapsed ? 'Show the menu' : 'Hide the menu'}
-            title={menuCollapsed ? 'Show the menu' : 'Hide the menu'}
+            aria-label={toggleLabel}
+            title={toggleLabel}
           >
-            <span aria-hidden="true">☰</span>
+            <Icon name="menu" />
           </button>
         ) : null}
-        <img src={logo} alt="Taylor & Francis" className="head-logo" />
-        <div className="head-name">
-          TF Reader <span className="head-sub">admin console</span>
-        </div>
+        <span className="head-name">TF Reader admin console</span>
       </div>
       <div className="head-right">
         {user ? (
@@ -115,15 +115,18 @@ export default function Header({ menuCollapsed = false, onToggleMenu }) {
               <span className="profile-avatar" aria-hidden="true">
                 {initialsOf(displayName)}
               </span>
-              <span className="profile-name">{displayName}</span>
+              <span className="profile-info">
+                <span className="profile-name">{displayName}</span>
+                <span className="profile-role">{ROLE_LABEL[user.role] ?? user.role}</span>
+              </span>
+              <Icon name="expand_more" style={{ fontSize: 18, color: 'var(--slate)' }} />
             </button>
 
             {menuOpen ? (
               <div className="profile-menu">
-                <p className="muted small">{ROLE_LABEL[user.role] ?? user.role}</p>
-                <button type="button" className="btn" onClick={handleSignOut} disabled={signingOut}>
+                <Button onClick={handleSignOut} disabled={signingOut}>
                   {signingOut ? 'Signing out...' : 'Sign out'}
-                </button>
+                </Button>
               </div>
             ) : null}
           </div>

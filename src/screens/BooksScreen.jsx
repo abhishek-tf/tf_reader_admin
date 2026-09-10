@@ -1,22 +1,15 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 import DataTable from '../ui/DataTable.jsx';
 import Pagination from '../ui/Pagination.jsx';
 import FilterBar from '../ui/FilterBar.jsx';
-import { listCatalogueItems } from '../api/catalogueItems.js';
-import { listPublishers } from '../api/publishers.js';
-import { fetchAllPages } from '../api/client.js';
+import PageHeader from '../ui/PageHeader.jsx';
+import { BooksDecoration } from '../ui/pageDecorations.jsx';
+import Tabs from '../ui/Tabs.jsx';
+import Button from '../ui/Button.jsx';
+import RouteErrorBoundary from '../ui/RouteErrorBoundary.jsx';
+import { useBooks, STATUS_TABS } from './useBooks.js';
+import { COLUMNS } from './bookColumns.jsx';
 
-const PAGE_SIZE = 20;
-// Server-side page size for the walk below - deliberately larger than PAGE_SIZE, since this
-// walks the whole matching set once per filter change rather than one page at a time.
-const WALK_PAGE_SIZE = 100;
-
-const TIER_LABEL = {
-  OPEN_ACCESS: 'Open access',
-  SUBSCRIPTION: 'Subscription',
-  ELITE: 'Elite',
-};
 const CONTENT_TYPE_OPTIONS = [
   { value: 'PDF', label: 'PDF' },
   { value: 'EPUB', label: 'EPUB' },
@@ -27,200 +20,134 @@ const TIER_OPTIONS = [
   { value: 'SUBSCRIPTION', label: 'Subscription' },
   { value: 'ELITE', label: 'Elite' },
 ];
-const CONTENT_STATE_LABEL = {
-  NONE: 'No content',
-  QUEUED: 'Queued',
-  PROCESSING: 'Processing',
-  READY: 'Ready',
-  FAILED: 'Failed',
-};
 
-const EMPTY_FILTERS = { publisherId: '', collectionId: '', contentType: '', accessTier: '', q: '' };
+function BookFilters({ b }) {
+  return (
+    <FilterBar
+      searchValue={b.filters.q}
+      onSearchChange={(q) => b.updateFilters({ q })}
+      searchPlaceholder="Search title, author or ISBN..."
+      filters={[
+        {
+          name: 'publisherId',
+          label: 'Publisher',
+          value: b.filters.publisherId,
+          onChange: (publisherId) => b.updateFilters({ publisherId }),
+          placeholder: 'Publisher: All',
+          options: b.publisherOptions.map((publisher) => ({
+            value: publisher.id,
+            label: publisher.name,
+          })),
+        },
+        {
+          name: 'contentType',
+          label: 'Format',
+          value: b.filters.contentType,
+          onChange: (contentType) => b.updateFilters({ contentType }),
+          placeholder: 'Format: All',
+          options: CONTENT_TYPE_OPTIONS,
+        },
+        {
+          name: 'accessTier',
+          label: 'Access tier',
+          value: b.filters.accessTier,
+          onChange: (accessTier) => b.updateFilters({ accessTier }),
+          placeholder: 'Tier: All',
+          options: TIER_OPTIONS,
+        },
+        {
+          name: 'collectionId',
+          label: 'Collection ID',
+          type: 'text',
+          value: b.filters.collectionId,
+          onChange: (collectionId) => b.updateFilters({ collectionId }),
+          placeholder: 'Collection ID',
+        },
+      ]}
+      trailing={
+        <button type="button" className="btn-reset-link" onClick={b.clear}>
+          Reset
+        </button>
+      }
+    />
+  );
+}
+
+function HiddenCountNotice({ b }) {
+  if (b.error || b.loading || b.hiddenCount === 0 || b.visibleCount === 0) return null;
+  return (
+    <p className="muted small">
+      Also hidden: {b.hiddenCount} more book{b.hiddenCount === 1 ? '' : 's'} matching these
+      filters, whose publisher is suspended.
+    </p>
+  );
+}
+
+function emptyMessageFor(b) {
+  if (b.hiddenCount > 0 && b.visibleCount === 0) {
+    return 'Every book matching these filters belongs to a suspended publisher, so none are shown.';
+  }
+  return 'No books match these filters.';
+}
 
 export default function BooksScreen() {
-  const [filters, setFilters] = useState(EMPTY_FILTERS);
-  const [page, setPage] = useState(0);
-  const [list, setList] = useState({ items: [], loading: true, error: null });
-  const [suspendedPublisherIds, setSuspendedPublisherIds] = useState(() => new Set());
-
-  // Loaded once, not re-run per page or filter change: matches what the backend already does
-  // for entitlement checks and OPDS feeds, where a suspended publisher's whole catalogue
-  // disappears.
-  useEffect(() => {
-    const controller = new AbortController();
-    fetchAllPages((statusPage) =>
-      listPublishers(
-        { status: 'SUSPENDED', page: statusPage, size: 100 },
-        { signal: controller.signal }
-      )
-    )
-      .then((suspended) => {
-        setSuspendedPublisherIds(new Set(suspended.map((publisher) => publisher.id)));
-      })
-      .catch((error) => {
-        if (error.name === 'AbortError') return;
-        // No retry, and this effect never runs again after mount: not worth failing the
-        // whole screen over, but be accurate about the cost - if this call fails, suspended
-        // publishers' books stay visible for as long as this screen stays mounted, full stop.
-      });
-    return () => controller.abort();
-  }, []);
-
-  // Walks every server page matching the current filters, once, rather than fetching one
-  // page of PAGE_SIZE at a time. GET /catalogue-items has no way to exclude a suspended
-  // publisher's books, so filtering has to happen client-side - and filtering one already-
-  // paginated slice at a time is what let the pager's own total and page count drift from
-  // what was actually shown. Filtering the whole matching set before paginating it, instead
-  // of after, is what keeps them honest: `total` below is the true reachable count, and every
-  // page (bar the last) is a full PAGE_SIZE. This app's catalogue is small enough in practice
-  // for that whole-set walk to cost little; a catalogue large enough for that not to hold
-  // would need the exclusion done server-side instead, not a bigger version of this workaround.
-  function load(signal) {
-    setList((current) => ({ ...current, loading: true, error: null }));
-    return fetchAllPages((walkPage) =>
-      listCatalogueItems({ ...filters, page: walkPage, size: WALK_PAGE_SIZE }, { signal })
-    )
-      .then((items) => setList({ items, loading: false, error: null }))
-      .catch((error) => {
-        if (error.name === 'AbortError') return;
-        setList((current) => ({ ...current, loading: false, error }));
-      });
-  }
-
-  useEffect(() => {
-    const controller = new AbortController();
-    load(controller.signal);
-    return () => controller.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- load reads filters from state directly
-  }, [filters]);
-
-  function updateFilters(patch) {
-    setFilters((current) => ({ ...current, ...patch }));
-    setPage(0);
-  }
-
-  const visibleItems = list.items.filter((item) => !suspendedPublisherIds.has(item.publisherId));
-  const hiddenCount = list.items.length - visibleItems.length;
-  // Paginated here, over the already-filtered set, not by the server: `page` only slices
-  // what is already loaded, so changing it does not refetch anything.
-  const pageItems = visibleItems.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
-
-  const columns = [
-    { key: 'title', label: 'Title' },
-    {
-      key: 'publisherName',
-      label: 'Publisher',
-      render: (row) => row.publisherName ?? row.publisherId,
-    },
-    { key: 'contentType', label: 'Type' },
-    {
-      key: 'accessTier',
-      label: 'Access tier',
-      render: (row) => (
-        <span className={`badge badge-${row.accessTier}`}>{TIER_LABEL[row.accessTier]}</span>
-      ),
-    },
-    {
-      key: 'contentState',
-      label: 'Content state',
-      render: (row) => (
-        <>
-          {CONTENT_STATE_LABEL[row.contentState] ?? row.contentState}
-          {row.contentState === 'FAILED' && row.contentError ? (
-            <p className="content-error">{row.contentError}</p>
-          ) : null}
-        </>
-      ),
-    },
-    {
-      key: 'actions',
-      label: '',
-      render: (row) => (
-        <Link className="btn" to={`/books/${row.id}/edit`}>
-          Edit
-        </Link>
-      ),
-    },
-  ];
+  const b = useBooks();
+  const location = useLocation();
 
   return (
     <div className="stack">
-      <section className="card">
-        <h1>Books</h1>
-        <p className="muted">The console&apos;s catalogue, filtered by tier, type and publisher.</p>
-        <div className="row-buttons">
-          <Link className="btn btn-primary" to="/books/new">
+      <PageHeader
+        title="Books"
+        subtitle="The console's catalogue, filtered by tier, type and publisher."
+        decoration={<BooksDecoration />}
+        actions={
+          <Button as={Link} variant="primary" icon="add" to="/books/new">
             Add book
-          </Link>
-        </div>
+          </Button>
+        }
+      />
 
-        <FilterBar
-          searchValue={filters.q}
-          onSearchChange={(q) => updateFilters({ q })}
-          searchPlaceholder="Search title, author or ISBN"
-          filters={[
-            {
-              name: 'publisherId',
-              label: 'Publisher ID',
-              type: 'text',
-              value: filters.publisherId,
-              onChange: (publisherId) => updateFilters({ publisherId }),
-            },
-            {
-              name: 'collectionId',
-              label: 'Collection ID',
-              type: 'text',
-              value: filters.collectionId,
-              onChange: (collectionId) => updateFilters({ collectionId }),
-            },
-            {
-              name: 'contentType',
-              label: 'Content type',
-              value: filters.contentType,
-              options: CONTENT_TYPE_OPTIONS,
-              onChange: (contentType) => updateFilters({ contentType }),
-            },
-            {
-              name: 'accessTier',
-              label: 'Access tier',
-              value: filters.accessTier,
-              options: TIER_OPTIONS,
-              onChange: (accessTier) => updateFilters({ accessTier }),
-            },
-          ]}
-        />
+      <Tabs
+        tabs={STATUS_TABS.map((tab) => ({ ...tab, count: b.tabCounts[tab.key] }))}
+        active={b.statusTab}
+        onChange={b.changeStatusTab}
+      />
 
-        <DataTable
-          columns={columns}
-          rows={pageItems}
-          loading={list.loading}
-          error={list.error}
-          emptyMessage={
-            hiddenCount > 0 && visibleItems.length === 0
-              ? 'Every book matching these filters belongs to a suspended publisher, so none are shown.'
-              : 'No books match these filters.'
-          }
-          onRetry={() => load()}
-        />
-        {!list.error && !list.loading && hiddenCount > 0 && visibleItems.length > 0 ? (
-          <p className="muted small">
-            Also hidden: {hiddenCount} more book{hiddenCount === 1 ? '' : 's'} matching these
-            filters, whose publisher is suspended.
-          </p>
-        ) : null}
-        {/* Guarded like every other list: unguarded, Previous/Next and "Page 1 of 1 · 0 total"
-            rendered underneath the loading row and underneath the error message. `total` is
-            visibleItems.length, not the server's raw count, so this always matches what
-            paging through actually reaches. */}
-        {!list.error && visibleItems.length > 0 ? (
-          <Pagination
-            page={page}
-            size={PAGE_SIZE}
-            total={visibleItems.length}
-            onPageChange={setPage}
-          />
-        ) : null}
-      </section>
+      <BookFilters b={b} />
+
+      <DataTable
+        columns={COLUMNS}
+        rows={b.pageItems}
+        loading={b.loading}
+        error={b.error}
+        emptyMessage={emptyMessageFor(b)}
+        onRetry={b.retry}
+        header={!b.loading && !b.error ? <span>{b.total} book{b.total === 1 ? '' : 's'} listed</span> : null}
+      />
+      <HiddenCountNotice b={b} />
+      {/* Guarded like every other list: unguarded, Previous/Next and "Page 1 of 1 · 0 total"
+          rendered underneath the loading row and underneath the error message. `total` is
+          the client-filtered count, not the server's raw one, so this always matches what
+          paging through actually reaches. */}
+      {!b.error && b.total > 0 ? (
+        <Pagination page={b.page} size={b.pageSize} total={b.total} onPageChange={b.setPage} />
+      ) : null}
+
+      {/* Filled by the /books/new and /books/:itemId/edit child routes — BookFormScreen's own
+          fixed-position drawer overlay, rendered here so this table stays mounted and visible
+          (blurred) behind it, rather than being replaced by it. Renders nothing on the plain
+          /books address, where there's no matching child route. Wrapped in an error boundary
+          because that overlay's backdrop is a sibling of this Outlet, not an ancestor of it —
+          without one, a render error in there has nothing to catch it and leaves the backdrop
+          on screen with no panel and no way to close it.
+          `context` hands BookFormScreen this list's own reload — since this table now stays
+          mounted across a create/edit instead of remounting on the way back to /books (that
+          remount used to be what refetched it for free), something has to trigger that
+          refetch explicitly, or a status edit lands on the server but the row goes on
+          showing what it said before the edit until a manual reload. */}
+      <RouteErrorBoundary resetKey={location.pathname} fallbackTo="/books">
+        <Outlet context={{ reload: b.retry }} />
+      </RouteErrorBoundary>
     </div>
   );
 }

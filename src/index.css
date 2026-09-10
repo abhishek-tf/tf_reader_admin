@@ -3,52 +3,118 @@
  * Plain CSS, no framework, per .claude/STYLE.md. Everything is driven by the variables in
  * :root, so changing the look is one block rather than a hunt through files.
  *
- * Split this into CSS modules per component only when it stops being readable. It is about
- * 250 lines and it is not there yet. */
+ * Tokens below are copied from the Stitch workspace's design system ("T&F Reader Admin
+ * Design") as of 2026-09-10, not reinterpreted. Where Stitch's own screens disagree with its
+ * abstract design-doc (e.g. status pill colours), the tokens follow what the screens actually
+ * render, since that is the thing being replicated pixel for pixel.
+ *
+ * Split this into CSS modules per component only when it stops being readable. */
 
 :root {
-  /* Taylor & Francis brand palette, per TF_BRAND_GUIDELINES_SHARED.md. The semantic variables
-   * below (--bg, --ink, --accent, etc.) carry the brand colours now, so every screen picks
-   * this up automatically through the variables it already uses — nothing else needed to
-   * change. The --brand-* names stay available for anywhere that wants a specific palette
-   * colour by name rather than by semantic role. */
-  --bg: #ebf0ff; /* Cornflower Neutral */
-  --panel: #ffffff; /* White */
-  --ink: #283857; /* Carbon */
-  --muted: #3c4e69; /* Slate */
-  --line: #e9e9ec; /* Cloud */
-  --accent: #002244; /* Indigo */
-  --ok: #00786e; /* Mint Dark */
-  --ok-bg: #ebfcf7; /* Mint Neutral */
-  --bad: #bf1b4f; /* Coral Dark */
-  --bad-bg: #ffebf0; /* Coral Neutral */
-  --radius: 4px;
-  --gap: 16px;
-  /* .head's own fixed height. Named rather than left as a bare 60px in both places: the
-     mobile drawer below has to start exactly where the header ends, and a variable is what
-     keeps that true if the header's height ever changes, instead of two numbers that only
-     happen to agree. */
-  --header-height: 60px;
+  /* ── Stitch palette, verbatim ────────────────────────────────────────────── */
+  --indigo: #002244; /* sidebar, brand chrome */
+  --ultramarine: #003cb2; /* primary interactive: buttons, links, focus rings */
+  --ultramarine-hover: #002d86;
+  --primary-deep: #002980; /* button hover target used in a couple of Stitch screens */
+  --cornflower: #505aff;
+  --vista: #91aaff;
+  --carbon: #283857; /* primary text */
+  --slate: #3c4e69; /* secondary text, muted labels */
+  --secondary: #456085; /* used for the SUSPENDED status pair */
+  --cloud: #e9e9ec; /* borders, dividers */
+  --cornflower-neutral: #ebf0ff; /* tinted hover/active backgrounds, info badges */
+  --surface-page: #f4f6fa; /* app canvas background */
+  --surface-white: #ffffff; /* cards, header, table rows */
+  --surface-container-low: #f1f3ff;
+  --surface-container: #e9edff;
+  --surface-container-high: #e0e8ff;
+  --mint-dark: #00786e;
+  --mint-neutral: #c9fced;
+  --mint-subtle: #ebfcf7;
+  --saffron-dark: #eeaf00;
+  --saffron-neutral: #fffacc;
+  --coral-dark: #bf1b4f;
+  --coral-neutral: #ffebf0;
+
+  /* ── Semantic roles, so most of this file reads by role rather than by colour name ───────
+   * Kept from the previous palette pass so existing references still resolve; values now
+   * point at the Stitch equivalents rather than the old brand-guidelines-only palette. --bg
+   * is the page canvas (surface-page), not the cornflower tint — that tint is reserved for
+   * hover/active states and badge fills. --accent is Ultramarine, the interactive colour,
+   * not Indigo — Indigo is chrome-only (the sidebar), which is why .side below still reaches
+   * for --indigo directly instead of --accent. */
+  --bg: var(--surface-page);
+  --panel: var(--surface-white);
+  --ink: var(--carbon);
+  --muted: var(--slate);
+  --line: var(--cloud);
+  --accent: var(--ultramarine);
+  --ok: var(--mint-dark);
+  --ok-bg: var(--mint-subtle);
+  --bad: var(--coral-dark);
+  --bad-bg: var(--coral-neutral);
+
+  /* ── Shape ────────────────────────────────────────────────────────────────
+   * Stitch's own scale: 8px on buttons/inputs/cards, 12px on modal/drawer containers, full
+   * pill on badges. --radius is the 8px default; the other two are named for where they're
+   * used rather than by size, so a future re-tune only means changing the value here. */
+  --radius: 8px;
+  --radius-container: 12px;
+  --radius-full: 9999px;
+  --radius-sm: 4px;
+
+  /* ── Spacing scale, Stitch's space-* tokens ──────────────────────────────── */
+  --space-3xs: 2px;
+  --space-2xs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 20px;
+  --space-xl: 24px;
+  --space-2xl: 32px;
+  --space-3xl: 40px;
+  --gutter-grid: 24px;
+  --sidebar-width: 240px;
+  --header-height: 64px;
+  /* Kept as an alias: a lot of existing spacing in this file was written against --gap before
+     the Stitch pass, and --gap === --space-md === 16px, so nothing using it needs to change. */
+  --gap: var(--space-md);
+
+  /* ── Elevation ────────────────────────────────────────────────────────────
+   * Stitch communicates hierarchy with flat tonal layers and crisp 1px borders more than
+   * shadow, so these are subtle by design — not a mistake if they look barely-there next to
+   * a typical Material shadow scale. */
+  --shadow-header: 0 1px 8px rgba(0, 0, 0, 0.04);
+  --shadow-card: 0 1px 3px rgba(0, 34, 68, 0.05), 0 8px 16px -4px rgba(0, 34, 68, 0.03);
+  --shadow-popover: 0 8px 24px -4px rgba(0, 34, 68, 0.12);
+  --shadow-focus-ring: 0 0 0 2px rgba(0, 60, 178, 0.35);
+
+  /* ── Type ─────────────────────────────────────────────────────────────────
+   * Open Sans for UI, Aleo for stat values and editorial subheadings. Weights 300/400/700
+   * only, per TF_BRAND_GUIDELINES_SHARED.md — no 500/600 anywhere in this file. */
   --sans: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
     sans-serif;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-
-  --brand-indigo: #002244;
-  --brand-ultramarine: #003cb2;
-  --brand-cornflower: #505aff;
-  --brand-vista: #91aaff;
-  --brand-carbon: #283857;
-  --brand-slate: #3c4e69;
-  --brand-cloud: #e9e9ec;
-  --brand-cornflower-neutral: #ebf0ff;
-  --brand-saffron: #eeaf00;
-  --brand-saffron-neutral: #fffacc;
-  --brand-mint-dark: #00786e;
-  --brand-mint-neutral: #ebfcf7;
-  --brand-coral-dark: #bf1b4f;
-  --brand-coral-neutral: #ffebf0;
   --font-open-sans: 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-aleo: 'Aleo', Georgia, serif;
+
+  /* Legacy brand-* aliases: a handful of components still reach for these by name (a specific
+     palette colour rather than a role). Point them at the Stitch values above so there is one
+     source of truth even though there are two ways to spell it. */
+  --brand-indigo: var(--indigo);
+  --brand-ultramarine: var(--ultramarine);
+  --brand-cornflower: var(--cornflower);
+  --brand-vista: var(--vista);
+  --brand-carbon: var(--carbon);
+  --brand-slate: var(--slate);
+  --brand-cloud: var(--cloud);
+  --brand-cornflower-neutral: var(--cornflower-neutral);
+  --brand-saffron: var(--saffron-dark);
+  --brand-saffron-neutral: var(--saffron-neutral);
+  --brand-mint-dark: var(--mint-dark);
+  --brand-mint-neutral: var(--mint-subtle);
+  --brand-coral-dark: var(--coral-dark);
+  --brand-coral-neutral: var(--coral-neutral);
 }
 
 * {
@@ -69,6 +135,26 @@ body {
   background: var(--bg);
   color: var(--ink);
   font: 14px/1.5 var(--sans);
+}
+
+/* Material Symbols Outlined ships as a font, rendered through this class with the icon's
+   name as the element's text content — exactly how Stitch's own markup uses it, so an icon
+   swap during page migration is a one-word text change, not a new import. */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  vertical-align: middle;
 }
 
 h1 {
@@ -106,64 +192,243 @@ h2 {
   max-height: 220px;
   object-fit: contain;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
 }
 
-/* ── shell: header on top, menu left, content right ───────────────────────── */
-.shell {
+/* A real `<input type="file">`, kept focusable and keyboard-operable (not `display: none`,
+   which would drop it from the tab order) but visually replaced by the styled label/dropzone
+   next to it — the same "hidden input, visible label" pattern as everywhere else the console
+   already relies on a native `<input type="file">` for its real validity. */
+.file-input-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  opacity: 0;
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+
+/* The content-file dropzone — Stitch's "Drop a file here, or browse" treatment for
+   ContentUploadPanel. A `<label>` wrapping the real (hidden) `<input>` above, so it's a real
+   file chooser, not a styled div pretending to be one. */
+.upload-dropzone {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  gap: var(--space-2xs);
+  padding: var(--space-lg);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface-page) 50%, transparent);
+  color: var(--slate);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 120ms, background-color 120ms, color 120ms;
+}
+.upload-dropzone:hover {
+  border-color: var(--accent);
+  background: var(--cornflower-neutral);
+  color: var(--accent);
+}
+/* Mid-upload: no separate Upload button, so this — the dropzone itself, briefly inert and
+   spinning its icon — is the only feedback that a pick just turned into a real request. */
+.upload-dropzone-busy {
+  cursor: not-allowed;
+  border-color: var(--accent);
+  background: var(--cornflower-neutral);
+  color: var(--accent);
+}
+.upload-dropzone-busy .material-symbols-outlined {
+  animation: badge-spin 900ms linear infinite;
+}
+.upload-dropzone-text {
+  font-weight: 700;
+  color: var(--carbon);
+  font-size: 13px;
+}
+.upload-dropzone-browse {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+/* The cover-artwork card — Stitch's thumbnail-beside-Choose-File treatment for
+   CoverUploadPanel. */
+.cover-upload-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-container-low);
+}
+.cover-upload-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 80px;
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-white);
+  color: var(--outline);
+  overflow: hidden;
+}
+.cover-upload-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cover-upload-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+  flex: 1;
+  min-width: 0;
+}
+.cover-upload-title {
+  font-weight: 700;
+  color: var(--carbon);
+}
+.cover-upload-choose {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-2xs);
+  position: relative;
+}
+.upload-choose-btn {
+  cursor: pointer;
+}
+
+/* ── shell: fixed indigo sidebar (full height) + header/content offset to its right ─────────
+ * Structural match for Stitch's `<aside class="fixed ... w-sidebar-width">` +
+ * `<div class="pl-sidebar-width">` pattern, not just a colour swap: the sidebar is
+ * position:fixed against the viewport, and everything else is pushed right by its width
+ * rather than sitting beside it in a flex row. */
+.shell {
   min-height: 100%;
 }
 
+.app-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: var(--sidebar-width);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: var(--indigo);
+  box-shadow: var(--shadow-header);
+  user-select: none;
+  transform: translateX(-100%);
+  transition: transform 200ms ease;
+}
+.app-sidebar.app-sidebar-open {
+  transform: translateX(0);
+}
+
+.app-sidebar-top {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-sidebar-brand {
+  height: var(--header-height);
+  padding: 0 var(--space-lg);
+  display: flex;
+  align-items: center;
+}
+.app-sidebar-brand-plate {
+  display: inline-flex;
+  align-items: center;
+  background: var(--surface-white);
+  border-radius: var(--radius);
+  padding: var(--space-2xs) var(--space-sm);
+}
+.app-sidebar-brand-logo {
+  /* Natural aspect ratio ~4.2:1 (the mark plus its "Taylor & Francis, by informa"
+     wordmark, baked into the one SVG) — height alone is enough to size it. */
+  height: 26px;
+  width: auto;
+  object-fit: contain;
+}
+
+.app-sidebar-section-label {
+  padding: var(--space-xs) var(--space-md);
+  color: color-mix(in srgb, var(--vista) 70%, transparent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.app-shell-offset {
+  padding-left: var(--sidebar-width);
+}
+
+/* ── header: fixed, offset to start where the sidebar ends ──────────────────────────────── */
 .head {
+  position: fixed;
+  top: 0;
+  left: var(--sidebar-width);
+  right: 0;
+  transition: left 200ms ease;
+  z-index: 40;
+  height: var(--header-height);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--gap);
-  padding: 0 var(--gap);
-  height: var(--header-height);
-  background: var(--panel);
-  border-bottom: 1px solid var(--line);
+  padding: 0 var(--space-2xl);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-header);
 }
 .head-brand {
   display: flex;
   align-items: center;
   gap: 12px;
 }
+.head-full {
+  left: 0;
+}
 .menu-toggle {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   padding: 0;
-  font-size: 16px;
-  line-height: 1;
-  color: var(--ink);
+  color: var(--slate);
   background: none;
-  border: 1px solid var(--line);
+  border: none;
   border-radius: var(--radius);
   cursor: pointer;
+  transition: background-color 120ms, color 120ms;
 }
 .menu-toggle:hover {
-  background: var(--bg);
+  background: var(--cornflower-neutral);
+  color: var(--accent);
 }
 .menu-toggle:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
-.head-logo {
-  /* Master logo, digital minimum height per brand guidelines is 45px. */
-  height: 45px;
-  width: auto;
-}
 .head-name {
+  color: var(--carbon);
   font-weight: 700;
-}
-.head-sub {
-  color: var(--muted);
-  font-weight: 400;
 }
 .head-right {
   display: flex;
@@ -185,9 +450,10 @@ h2 {
   border: 1px solid transparent;
   border-radius: var(--radius);
   cursor: pointer;
+  transition: background-color 120ms;
 }
 .profile-toggle:hover {
-  background: var(--bg);
+  background: var(--surface-container-low);
 }
 .profile-toggle:focus-visible {
   outline: 2px solid var(--accent);
@@ -201,10 +467,18 @@ h2 {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: var(--accent);
+  /* Stitch's header avatar uses a third, deeper blue ("primary") rather than the Ultramarine
+     interactive colour or the Indigo sidebar colour. */
+  background: var(--primary-deep);
   color: #fff;
   font-size: 12px;
   font-weight: 700;
+}
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.2;
 }
 /* A long email must not push the header apart on a narrow window. */
 .profile-name {
@@ -212,19 +486,25 @@ h2 {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-weight: 700;
 }
+.profile-role {
+  font-size: 12px;
+  color: var(--slate);
+}
+
 .profile-menu {
   position: absolute;
   top: calc(100% + 4px);
   right: 0;
   /* Above the page, below .toasts at 50: a failure message still wins. */
-  z-index: 40;
+  z-index: 45;
   min-width: 180px;
   padding: 12px;
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  box-shadow: 0 2px 6px rgb(0 0 0 / 12%);
+  box-shadow: var(--shadow-popover);
 }
 
 .body {
@@ -233,111 +513,100 @@ h2 {
   min-height: 0;
 }
 
-/* Dark side nav, taking inspiration from the T&F brand guidelines site itself: an Indigo
- * background with a light wordmark-adjacent text colour and a Cornflower pill behind the
- * current section, rather than a light panel with a left accent bar. */
+/* Dark side nav: Indigo background, Vista-tinted link text, and an Ultramarine pill behind
+ * the current section (matching Stitch's `bg-ultramarine text-on-primary` on
+ * `[aria-current="page"]`) rather than a translucent-white highlight. */
 .side {
-  width: 200px;
-  flex-shrink: 0;
-  background: var(--brand-indigo);
-  padding: 12px 8px;
+  flex: 1;
+  padding: var(--space-xs);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
-/* Collapsed to nothing rather than to a narrow rail: the entries are words, not icons, so a
- * rail would have nothing to put in it. The padding goes too, or it would hold the menu open
- * at 16px. The toggle that brings it back is in the header. */
+/* Collapsed to nothing rather than to a narrow rail: the entries are words, not icons alone,
+ * so a rail would crowd them. The toggle that brings it back is in the header. */
 .side-collapsed {
-  width: 0;
-  padding-left: 0;
-  padding-right: 0;
+  display: none;
 }
 .side ul {
   list-style: none;
   margin: 0;
   padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 .side li {
-  margin-bottom: 2px;
+  margin: 0;
 }
 .side a,
 .side-soon {
-  display: block;
-  padding: 8px 12px;
-  border-radius: 8px;
-  color: var(--brand-cornflower-neutral);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius);
+  color: var(--vista);
+  font-size: 14px;
   text-decoration: none;
+  transition: background-color 120ms, color 120ms;
 }
 .side a:hover {
-  background: rgb(255 255 255 / 10%);
+  background: rgba(255, 255, 255, 0.1);
   color: #fff;
 }
 .side a.side-on {
-  background: rgb(255 255 255 / 12%);
-  border-radius: 8px;
+  background: var(--accent);
   color: #fff;
   font-weight: 700;
 }
 .side-soon {
-  color: rgb(255 255 255 / 35%);
+  color: rgba(255, 255, 255, 0.35);
   cursor: default;
+}
+.side-icon {
+  font-size: 20px !important;
+  flex-shrink: 0;
 }
 
 .content {
   flex: 1;
   min-width: 0;
-  padding: var(--gap);
+  padding: var(--space-2xl);
+  padding-top: calc(var(--header-height) + var(--space-xl));
+  background: var(--bg);
+  min-height: 100%;
 }
 
 /* ── mobile and tablet: desktop stays exactly as above, unchanged ───────────
- * Below this width the 200px sidebar would leave too little room to be usable, so it
- * becomes an overlay instead of a permanent column - `position: fixed` takes it out of
- * `.body`'s flex flow, so `.content` claims the full width on its own with no extra rule
- * needed. Reuses the same collapse toggle and the same `.side-collapsed` class that already
- * exists for desktop; only what "expanded" looks like changes at this width.
+ * Below this width the fixed sidebar would leave too little room to be usable, so it becomes
+ * an overlay instead of a permanent column; the header and content both fall back to a
+ * full-width, unindented layout.
  *
  * 768px here has to match AppLayout.jsx's own matchMedia('(max-width: 768px)') - that is
  * what decides whether the menu starts collapsed, this is what decides what "collapsed"
  * and "expanded" look like once it has. Change one, change the other. */
 @media (max-width: 768px) {
-  /* The header has to stay pinned too, not just the drawer below it: the page's normal
-     scroll would otherwise carry the header - and its hamburger - off-screen while the
-     drawer, already fixed to the viewport, stays exactly where it was, leaving it open
-     with no visible way to close it until the operator scrolls back up. z-index above the
-     drawer's, so the toggle stays reachable and on top of it, not underneath. */
   .head {
-    position: fixed;
-    top: 0;
     left: 0;
-    right: 0;
-    z-index: 31;
+    padding: 0 var(--space-md);
   }
-  /* Everything below the header has to make room for it now that it is out of `.shell`'s
-     normal flow, or content starts underneath it instead of below it. */
-  .body {
-    margin-top: var(--header-height);
+  .content {
+    padding: var(--space-md);
+    padding-top: calc(var(--header-height) + var(--space-md));
   }
 
-  /* Not just `.side`: that has the same specificity as `.side-collapsed` and sits later in
-     the file, so it would win over `.side-collapsed`'s `width: 0` and hold the drawer open
-     even when it is meant to be shut. */
-  .side:not(.side-collapsed) {
-    position: fixed;
-    top: var(--header-height);
-    bottom: 0;
-    left: 0;
-    z-index: 30;
+  /* Below 768px the sidebar is an overlay, not a column that pushes content aside: it needs
+     its own shadow when open (the desktop shadow-header is too faint to read as "floating
+     above the page"), and a narrower width than the desktop 240px so it doesn't cover the
+     whole phone screen. */
+  .app-sidebar {
     width: min(260px, 85vw);
-    overflow-y: auto;
+  }
+  .app-sidebar.app-sidebar-open {
     box-shadow: 2px 0 8px rgb(0 0 0 / 20%);
   }
 
-  /* The subtitle is the first thing to go: dropping it is what keeps "TF Reader" on one
-     line instead of wrapping inside the fixed-height header and clipping. */
-  .head-sub {
-    display: none;
-  }
-
-  /* Previous/status/Next wrapped mid-phrase with no wrap rule at all; centering it on wrap
-     reads better than the default left edge the flex row would otherwise leave it at. */
   .pagination {
     flex-wrap: wrap;
     justify-content: center;
@@ -348,17 +617,11 @@ h2 {
   }
 }
 
-/* Phone width specifically, not the 768px tablet cutoff above: at 768px the header already
- * fits. The wordmark logo is ~188px wide even at its 45px brand-guideline minimum height, and
- * `.head` never wraps, so logo + "TF Reader" + the profile control together push past a phone
- * width and the profile control is pushed off the right edge of the page. Hiding the logo
- * keeps it at its required height everywhere it does show rather than shrinking it below
- * spec; the avatar's initials still say who is signed in without the full name's width. */
+/* Phone width specifically, not the 768px tablet cutoff above: the profile name is the first
+ * thing to give up its space, so the avatar's initials still say who is signed in without the
+ * full name's width pushing other header content off-screen. */
 @media (max-width: 500px) {
-  .head-logo {
-    display: none;
-  }
-  .profile-name {
+  .profile-info {
     display: none;
   }
 }
@@ -373,7 +636,124 @@ h2 {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: var(--gap);
+  padding: var(--space-md);
+}
+
+/* ── page chrome: banner header, KPI metric cards ────────────────────────────
+ * Shared by every list screen in the Stitch designs: a white banner card with a title and
+ * primary action, then a 1–4 column row of metric cards, above the filter bar and table. */
+.page-banner {
+  position: relative;
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--space-lg) var(--space-xl);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+.page-banner-decoration {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: min(360px, 40%);
+  pointer-events: none;
+  z-index: 0;
+}
+.page-banner-decoration svg {
+  width: 100%;
+  height: 100%;
+}
+.page-banner-text {
+  position: relative;
+  z-index: 1;
+}
+.page-banner-title {
+  font-family: var(--font-open-sans);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--carbon);
+  margin: 0;
+}
+.page-banner-subtitle {
+  margin: var(--space-2xs) 0 0;
+  color: var(--slate);
+  font-size: 13px;
+}
+.page-banner-actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-md);
+}
+@media (max-width: 1024px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.kpi-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+.kpi-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--slate);
+}
+.kpi-card-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.kpi-card-icon {
+  font-size: 18px !important;
+  color: var(--slate);
+}
+.kpi-card-icon-accent {
+  color: var(--accent);
+}
+.kpi-card-bottom {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-xs);
+}
+.kpi-card-value {
+  font-family: var(--font-aleo);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--carbon);
+}
+.kpi-card-helper {
+  font-size: 11px;
+  color: var(--slate);
 }
 
 /* ── login ────────────────────────────────────────────────────────────────── */
@@ -396,26 +776,50 @@ h2 {
 
 /* ── form parts ───────────────────────────────────────────────────────────── */
 .field {
-  margin-bottom: 12px;
+  margin-bottom: var(--space-md);
+}
+/* Two fields side by side on a wide enough form (e.g. a modal-shaped create/edit page),
+   stacking back to one column on narrow widths rather than squeezing. */
+.field-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 var(--space-md);
+}
+@media (max-width: 480px) {
+  .field-grid-2 {
+    grid-template-columns: 1fr;
+  }
 }
 .field-label {
   display: block;
   font-weight: 700;
-  font-size: 12px;
-  margin-bottom: 4px;
+  font-size: 14px;
+  color: var(--carbon);
+  margin-bottom: var(--space-2xs);
+}
+/* Stitch's other label treatment — the one its drawers use (a small uppercase slate label)
+   rather than the bold sentence-case one its modals use. */
+.field-label-compact {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--slate);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 .input {
   width: 100%;
-  padding: 8px 10px;
+  padding: var(--space-xs) var(--space-sm);
   font: inherit;
   color: var(--ink);
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--radius);
+  transition: box-shadow 120ms;
 }
 .input:focus {
-  outline: 2px solid var(--accent);
-  outline-offset: -1px;
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--shadow-focus-ring);
 }
 .input:disabled {
   background: var(--bg);
@@ -430,7 +834,7 @@ h2 {
   margin: 4px 0 0;
 }
 .field-required {
-  color: var(--bad);
+  color: var(--accent);
 }
 .input-group {
   position: relative;
@@ -468,19 +872,25 @@ h2 {
   margin-top: 16px;
 }
 
+/* ── buttons ──────────────────────────────────────────────────────────────── */
 .btn {
-  padding: 8px 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2xs);
+  padding: var(--space-xs) var(--space-md);
   font: inherit;
-  color: var(--ink);
+  font-weight: 700;
+  color: var(--carbon);
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   cursor: pointer;
   text-decoration: none;
-  display: inline-block;
+  transition: background-color 120ms, color 120ms;
 }
 .btn:hover:not(:disabled) {
-  background: var(--bg);
+  background: var(--surface-container-low);
 }
 .btn:disabled {
   opacity: 0.55;
@@ -490,20 +900,51 @@ h2 {
  * the same table column takes up exactly as much height as the button would. */
 .btn-placeholder {
   display: inline-block;
-  padding: 8px 14px;
+  padding: var(--space-xs) var(--space-md);
   border: 1px solid transparent;
 }
 .btn-primary {
-  background: var(--accent);
-  border-color: var(--accent);
+  /* Same Indigo as the sidebar, not Ultramarine — a deliberate choice to keep the one
+     always-visible brand colour consistent between the nav rail and a primary action,
+     while --accent stays Ultramarine for links, focus rings and the sidebar's own active-item
+     highlight (which sits on top of the Indigo sidebar and needs to read as distinct from it). */
+  background: var(--indigo);
+  border-color: var(--indigo);
   color: #fff;
 }
 .btn-primary:hover:not(:disabled) {
   /* Same specificity as .btn:hover, so this must restate the background explicitly - otherwise
    * the generic light hover background wins by source order and leaves white text unreadable
    * on it. */
-  background: var(--accent);
-  filter: brightness(1.15);
+  background: var(--primary-deep);
+  border-color: var(--primary-deep);
+}
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--slate);
+}
+.btn-ghost:hover:not(:disabled) {
+  background: var(--cornflower-neutral);
+  color: var(--accent);
+}
+.btn-danger-ghost {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--slate);
+}
+.btn-danger-ghost:hover:not(:disabled) {
+  background: var(--coral-neutral);
+  color: var(--bad);
+  border-color: var(--bad);
+}
+.btn-sm {
+  padding: var(--space-2xs) var(--space-sm);
+  font-size: 12px;
+}
+.btn-icon {
+  padding: var(--space-xs);
+  border-radius: var(--radius);
 }
 
 .row-buttons {
@@ -516,34 +957,244 @@ h2 {
 /* ── table ────────────────────────────────────────────────────────────────── */
 .table-wrap {
   overflow-x: auto;
+  background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--radius);
 }
+.table-toolbar {
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  font-weight: 700;
+  color: var(--carbon);
+}
+
+/* A table cell that pairs a small square initials avatar with a name (and optionally a
+   secondary line under it) — the "entity" cell pattern Stitch uses for the first column of
+   every list table. */
+.table-entity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+.table-entity-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: var(--indigo);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+.table-entity-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.table-entity-sub {
+  font-size: 11px;
+  color: var(--slate);
+}
+
+/* A book's cover thumbnail in its table row — a small fixed-ratio tile, matching Stitch's
+   book-entity cell. `.book-cover-thumb-placeholder` is what a book with no cover on file
+   gets instead: a plain icon tile, not a broken image or an invented stock cover. */
+.book-cover-thumb {
+  width: 32px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--surface-container-low);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.book-cover-thumb-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--slate);
+}
+.book-cover-thumb-placeholder .material-symbols-outlined {
+  font-size: 18px;
+}
+
+/* A book's content format (PDF/EPUB/AUDIO), with a lock glyph appended when the encryption
+   rule (shared.md) says this combination of format and tier is actually encrypted. */
+.format-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  padding: 2px var(--space-xs);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--surface-page);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--carbon);
+}
+.format-chip .material-symbols-outlined {
+  color: var(--slate);
+}
+
+/* An icon-only row action — Stitch's action-cluster button, borderless until hovered. */
+.btn-icon-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  color: var(--slate);
+  text-decoration: none;
+  transition: background-color 120ms, color 120ms;
+}
+.btn-icon-ghost:hover {
+  background: var(--surface-container-low);
+  color: var(--accent);
+}
+
+/* A short machine code shown as a neutral outlined chip rather than the coloured status
+   pill — Stitch's treatment for a publisher/collection code cell. */
+.code-chip {
+  display: inline-block;
+  padding: 2px var(--space-xs);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--surface-page);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--carbon);
+}
+
+/* A table cell that navigates but should not read as a hyperlink — a publisher's name, a
+   "N collections" count. No blue, no permanent underline; row hover already shows it's
+   interactive, and a quiet underline on hover/focus confirms it without looking like a link
+   at rest. Behaviour (still a real `Link`, same destination, same click) is unchanged. */
+.row-link {
+  color: inherit;
+  text-decoration: none;
+}
+.row-link:hover,
+.row-link:focus-visible {
+  text-decoration: underline;
+}
+.row-link-emphasis {
+  font-weight: 700;
+  color: var(--carbon);
+}
+
+/* ── record detail hero: the "one thing, its status, and its primary actions" header a
+   detail screen (a publisher, a collection) opens with. Same card/badge/chip vocabulary as
+   the list page above it, scaled up for a single record rather than a row. */
+.detail-hero-top {
+  margin-bottom: var(--space-sm);
+}
+.detail-hero-main {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+.detail-hero-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.detail-hero-body {
+  flex: 1;
+  min-width: 200px;
+}
+.detail-hero-title {
+  margin: 0;
+  font-family: var(--font-open-sans);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--carbon);
+}
+.detail-hero-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-2xs);
+}
+.detail-hero-description {
+  margin: var(--space-sm) 0 0;
+  color: var(--carbon);
+}
+.detail-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-shrink: 0;
+}
+.detail-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+}
+.detail-section-title h2 {
+  font-family: var(--font-open-sans);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--carbon);
+  margin: 0;
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;
+  text-align: left;
 }
 .table th,
 .table td {
   text-align: left;
-  padding: 9px 12px;
+  padding: var(--space-sm) var(--space-md);
   border-bottom: 1px solid var(--line);
 }
 .table th {
-  background: var(--bg);
-  font-size: 12px;
-  color: var(--muted);
+  background: color-mix(in srgb, var(--surface-page) 70%, transparent);
+  color: var(--slate);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.table tbody tr:hover {
+  background: var(--surface-container-low);
 }
 .table tbody tr:last-child td {
   border-bottom: none;
 }
 .th-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
   background: none;
   border: 0;
   padding: 0;
   font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: inherit;
   cursor: pointer;
+}
+.th-sort-icon {
+  font-size: 14px !important;
+  color: var(--slate);
 }
 .table-state {
   text-align: center;
@@ -583,55 +1234,514 @@ h2 {
   overflow-wrap: break-word;
 }
 
+/* ── status pills ─────────────────────────────────────────────────────────
+ * Capsule badges with a small solid dot ahead of the label, matching Stitch's actual screens
+ * (Entitlements, Operators & Audit Log) rather than its more general design-doc colour
+ * guidance — the two disagree on which enum gets which colour, and the screens are the
+ * source of truth here. The dot is a ::before pseudo-element rather than a second span, so
+ * StatusBadge/IngestStateBadge's JSX contract (one span, one class) does not have to change. */
 .badge {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 2px var(--space-sm) 2px var(--space-xs);
+  border-radius: var(--radius-full);
   font-size: 11px;
   font-weight: 700;
-  border: 1.5px solid var(--line);
+  letter-spacing: 0.02em;
+  border: none;
+}
+.badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.badge-ACTIVE,
+.badge-READY {
+  background: var(--cornflower-neutral);
+  color: var(--accent);
+}
+.badge-ACTIVE::before,
+.badge-READY::before {
+  background: var(--accent);
 }
 .badge-OPEN_ACCESS {
-  background: var(--ok-bg);
-  color: var(--ok);
-  border-color: var(--ok);
+  background: var(--mint-subtle);
+  color: var(--mint-dark);
 }
-.badge-SUBSCRIPTION {
-  background: var(--brand-cornflower-neutral);
+.badge-OPEN_ACCESS::before {
+  background: var(--mint-dark);
+}
+.badge-SUBSCRIPTION,
+.badge-QUEUED {
+  background: var(--cornflower-neutral);
   color: var(--accent);
-  border-color: var(--accent);
+}
+.badge-SUBSCRIPTION::before,
+.badge-QUEUED::before {
+  background: var(--accent);
 }
 .badge-ELITE {
-  background: var(--brand-saffron-neutral);
-  color: var(--brand-carbon);
-  border-color: var(--brand-saffron);
+  background: var(--saffron-neutral);
+  color: var(--carbon);
+}
+.badge-ELITE::before {
+  background: var(--saffron-dark);
+}
+.badge-SUSPENDED {
+  background: var(--surface-container-low);
+  color: var(--secondary);
+}
+.badge-SUSPENDED::before {
+  background: var(--secondary);
+}
+.badge-RETIRED,
+.badge-NONE,
+.badge-DISABLED {
+  background: var(--surface-container-low);
+  color: var(--slate);
+}
+.badge-RETIRED::before,
+.badge-NONE::before,
+.badge-DISABLED::before {
+  background: var(--slate);
+}
+.badge-PENDING {
+  background: var(--surface-container);
+  color: var(--carbon);
+}
+.badge-PENDING::before {
+  background: var(--slate);
+}
+.badge-PROCESSING {
+  background: var(--surface-container-low);
+  color: var(--cornflower);
+}
+.badge-PROCESSING::before {
+  background: var(--cornflower);
+  animation: badge-spin 900ms linear infinite;
+}
+@keyframes badge-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.badge-REVOKED,
+.badge-FAILED {
+  background: var(--coral-neutral);
+  color: var(--coral-dark);
+}
+.badge-REVOKED::before,
+.badge-FAILED::before {
+  background: var(--coral-dark);
+}
+
+/* A catalogue item's own status — DRAFT/PUBLISHED/ARCHIVED, a different enum from
+   RecordStatus above but drawn from the same badge vocabulary. PUBLISHED reads the same as
+   ACTIVE/READY (the "this is live" colour); DRAFT and ARCHIVED are both "not live", so both
+   read as neutral rather than needing two more colours for one shade of meaning. */
+.badge-PUBLISHED {
+  background: var(--cornflower-neutral);
+  color: var(--accent);
+}
+.badge-PUBLISHED::before {
+  background: var(--accent);
+}
+.badge-DRAFT {
+  background: var(--surface-container);
+  color: var(--carbon);
+}
+.badge-DRAFT::before {
+  background: var(--slate);
+}
+.badge-ARCHIVED {
+  background: var(--surface-container-low);
+  color: var(--slate);
+}
+.badge-ARCHIVED::before {
+  background: var(--slate);
 }
 
 /* ── filter bar and pagination ───────────────────────────────────────────── */
 .filter-bar {
   display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
   flex-wrap: wrap;
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--space-sm);
 }
 .filter-bar-search {
   flex: 1;
   min-width: 200px;
+  height: 36px;
+  background: var(--surface-page);
 }
 .filter-bar-select {
   width: auto;
+  height: 36px;
+  background: var(--surface-page);
 }
 
 .pagination {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-top: 12px;
+  justify-content: flex-end;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
 }
 .pagination-status {
   margin: 0;
-  color: var(--muted);
+  color: var(--slate);
   font-size: 12px;
+}
+/* Pushes itself to the far left of `.pagination` via its own auto margin, rather than
+   changing `.pagination`'s own `justify-content` — that stays `flex-end` for every existing
+   caller that does not render this control at all. */
+.pagination-size {
+  margin-right: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+.pagination-steps {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+}
+.pagination-step-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-page);
+  color: var(--slate);
+  cursor: pointer;
+}
+.pagination-step-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.pagination-step-btn:hover:not(:disabled) {
+  background: var(--surface-container-low);
+}
+.pagination-current {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  /* Same Indigo as the sidebar and the primary button, not Ultramarine. */
+  background: var(--indigo);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* A quiet text-only "Reset" below a filter bar — Stitch never gives it a bordered button, so
+   this deliberately isn't `.btn`: a filter reset is the least important action on the row. */
+.btn-reset-link {
+  background: none;
+  border: none;
+  padding: var(--space-2xs) var(--space-sm);
+  color: var(--slate);
+  font: inherit;
+  font-size: 13px;
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  cursor: pointer;
+}
+.btn-reset-link:hover:not(:disabled) {
+  color: var(--coral-dark);
+}
+.btn-reset-link:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* The list/grid view toggle Stitch pairs with a table's "N things listed" header strip. */
+.view-toggle {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.view-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  background: var(--surface-white);
+  color: var(--slate);
+  cursor: pointer;
+}
+.view-toggle-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.view-toggle-active {
+  background: var(--surface-container);
+  color: var(--carbon);
+}
+
+/* ── tabs: bottom-border style, for a sub-navigation row within a screen ─────────────────── */
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  border-bottom: 1px solid var(--line);
+}
+.tab {
+  padding: 0 var(--space-2xs) var(--space-sm);
+  margin-bottom: -1px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  color: var(--slate);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  transition: color 120ms, border-color 120ms;
+}
+.tab:hover {
+  color: var(--carbon);
+}
+.tab-active {
+  color: var(--carbon);
+  font-weight: 700;
+  border-bottom-color: var(--accent);
+}
+.tab-count {
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--cornflower-neutral);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ── modal ────────────────────────────────────────────────────────────────
+ * Centred card over an Indigo, 60%-opacity, blurred backdrop — Stitch's exact modal chrome
+ * (Create Publisher, Add Institution, Grant Entitlement Wizard all share this shell). */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-md);
+  background: rgba(0, 34, 68, 0.6);
+  backdrop-filter: blur(4px);
+}
+.modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-container);
+  box-shadow: var(--shadow-popover);
+  overflow: hidden;
+}
+.modal-card-wide {
+  max-width: 720px;
+}
+.modal-card-xwide {
+  max-width: 900px;
+}
+.modal-header {
+  padding: var(--space-lg) var(--space-xl);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.modal-title {
+  margin: 0;
+  font-family: var(--font-open-sans);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--carbon);
+  letter-spacing: -0.005em;
+}
+.modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--slate);
+  cursor: pointer;
+  transition: background-color 120ms, color 120ms;
+}
+.modal-close:hover {
+  background: var(--surface-container-low);
+  color: var(--carbon);
+}
+.modal-body {
+  padding: var(--space-lg) var(--space-xl);
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+.modal-footer {
+  padding: var(--space-md) var(--space-xl);
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  flex-shrink: 0;
+}
+
+/* ── drawer: slide-over panel from the right ─────────────────────────────── */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(0, 34, 68, 0.4);
+  backdrop-filter: blur(4px);
+}
+.drawer-panel {
+  width: 100%;
+  max-width: 640px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border-left: 1px solid var(--line);
+  box-shadow: var(--shadow-popover);
+  overflow: hidden;
+}
+.drawer-panel-wide {
+  max-width: 768px;
+}
+
+/* The books list stays mounted behind this (BooksScreen's own `<Outlet/>` — see App.jsx's
+   nested `/books` routes), so this is a true overlay, not a plain page standing in for one:
+   full viewport, above the header and sidebar, the real table dimmed and blurred behind it
+   through `.modal-backdrop`'s own styling — the same relationship a `Modal` has to its
+   backdrop, just shaped like Stitch's drawer instead of its centred card. */
+.drawer-page {
+  /* `inset: 0`, not offset by the header/sidebar — Stitch's own overlay is `fixed inset-0`,
+     covering literally the whole viewport, header and sidebar included, not just the content
+     area beside them. z-index above both (sidebar is 50, header is 40) so it actually sits
+     over them rather than getting tucked behind. */
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  justify-content: flex-end;
+  /* Stitch's own numbers (indigo/40, backdrop-blur-sm) — this now has the real list mounted
+     and visible behind it (BooksScreen renders the /books/new and /books/:itemId/edit routes
+     through its own <Outlet/> rather than being replaced by them), so the same light tint
+     Stitch uses reads as a genuine blurred backdrop instead of a wash over nothing. */
+  background: rgba(0, 34, 68, 0.4);
+  backdrop-filter: blur(4px);
+  /* Scrolling happens inside `.drawer-body`, not here — the panel is now an exact
+     viewport-height box, so there is nothing for this container itself to scroll. */
+  overflow: hidden;
+}
+.drawer-page-panel {
+  width: 100%;
+  max-width: 640px;
+  /* Exact height, not `min-height` — `min-height: 100%` let the panel grow taller than the
+     viewport to fit its content, which meant the header and footer (both `flex-shrink: 0`)
+     scrolled away with everything else instead of staying put while only `.drawer-body`
+     (`flex: 1; overflow-y: auto`) scrolls, the way the real overlay Drawer already behaves. */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border-left: 1px solid var(--line);
+  box-shadow: var(--shadow-popover);
+  overflow: hidden;
+}
+.drawer-header {
+  padding: var(--space-lg) var(--space-xl);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.drawer-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  color: var(--slate);
+  font-size: 12px;
+  margin-bottom: var(--space-3xs);
+}
+.drawer-title {
+  margin: 0;
+  font-family: var(--font-open-sans);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--carbon);
+  line-height: 1.3;
+}
+.drawer-body {
+  padding: var(--space-lg) var(--space-xl);
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+.drawer-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+.drawer-section-title {
+  margin: 0;
+  padding-bottom: var(--space-2xs);
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--carbon);
+}
+.drawer-footer {
+  padding: var(--space-md) var(--space-xl);
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  flex-shrink: 0;
 }
 
 /* ── messages ─────────────────────────────────────────────────────────────── */
@@ -643,17 +1753,17 @@ h2 {
   flex-direction: column;
   gap: 8px;
   max-width: 340px;
-  z-index: 50;
+  z-index: 70;
 }
 .toast {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  padding: 10px 12px;
+  padding: var(--space-sm) var(--space-md);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--panel);
-  box-shadow: 0 2px 6px rgb(0 0 0 / 12%);
+  box-shadow: var(--shadow-popover);
 }
 .toast p {
   margin: 0;
@@ -662,17 +1772,17 @@ h2 {
   flex: 1;
 }
 .toast-ok {
-  background: var(--ok-bg);
-  border-color: var(--ok);
-  color: var(--ok);
+  background: var(--mint-subtle);
+  border-color: var(--mint-dark);
+  color: var(--mint-dark);
 }
 .toast-error {
-  background: var(--bad-bg);
-  border-color: var(--bad);
-  color: var(--bad);
+  background: var(--coral-neutral);
+  border-color: var(--coral-dark);
+  color: var(--coral-dark);
 }
 .toast-info {
-  background: var(--brand-cornflower-neutral);
+  background: var(--cornflower-neutral);
   color: var(--accent);
   border-color: var(--accent);
 }
@@ -684,82 +1794,4 @@ h2 {
   cursor: pointer;
   color: inherit;
   padding: 0 2px;
-}
-/* ── added for Institutions: same variables, same badge/button conventions ──── */
-
-.badge-ACTIVE {
-  background: var(--ok-bg);
-  color: var(--ok);
-  border-color: var(--ok);
-}
-
-.badge-SUSPENDED {
-  background: var(--brand-saffron-neutral);
-  color: var(--brand-carbon);
-  border-color: var(--brand-saffron);
-}
-
-.badge-RETIRED {
-  background: var(--bg);
-  color: var(--muted);
-  border-color: var(--line);
-}
-
-.badge-PENDING {
-  background: var(--brand-saffron-neutral);
-  color: var(--brand-carbon);
-  border-color: var(--brand-saffron);
-}
-
-.badge-REVOKED {
-  background: var(--bad-bg);
-  color: var(--bad);
-  border-color: var(--bad);
-}
-
-/* An admin user's inactive state. Same muted treatment as RETIRED, because it means the
-   same thing on the one record that uses AdminStatus instead of RecordStatus. */
-.badge-DISABLED {
-  background: var(--bg);
-  color: var(--muted);
-  border-color: var(--line);
-}
-/* ── added for ingest: a book's five content states ──────────────────────────
-   Same `.badge-X` scheme keyed on the raw enum value as every badge above, and the same
-   semantic variables — no new colours. None of these five names collides with a RecordStatus
-   or an AccessTier, so the one flat namespace still holds. */
-
-/* Nothing uploaded yet. Muted, like RETIRED and DISABLED: an absence, not a problem. */
-.badge-NONE {
-  background: var(--bg);
-  color: var(--muted);
-  border-color: var(--line);
-}
-
-/* Accepted and waiting. Informational, so the same blue as SUBSCRIPTION. */
-.badge-QUEUED {
-  background: var(--brand-cornflower-neutral);
-  color: var(--accent);
-  border-color: var(--accent);
-}
-
-/* Work in progress. Amber, like SUSPENDED and PENDING: in between, look again shortly. */
-.badge-PROCESSING {
-  background: var(--brand-saffron-neutral);
-  color: var(--brand-carbon);
-  border-color: var(--brand-saffron);
-}
-
-/* Done, and the only state in which a book appears in a feed. Green, like ACTIVE. */
-.badge-READY {
-  background: var(--ok-bg);
-  color: var(--ok);
-  border-color: var(--ok);
-}
-
-/* Ingest gave up. Red, like REVOKED. The reason is in contentError, next to the badge. */
-.badge-FAILED {
-  background: var(--bad-bg);
-  color: var(--bad);
-  border-color: var(--bad);
 }

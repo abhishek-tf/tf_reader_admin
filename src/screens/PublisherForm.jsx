@@ -1,14 +1,25 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import TextField from '../ui/TextField.jsx';
 import FormActions from '../ui/FormActions.jsx';
+import Icon from '../ui/Icon.jsx';
 import { useToast } from '../ui/ToastContext.jsx';
 import { ErrorCode } from '../api/errors.js';
 import { createPublisher, updatePublisher } from '../api/publishers.js';
 
+// Matches the contract's own pattern for a publisher code (wokay-api.yaml,
+// PublisherWrite.code): lowercase letters, digits and hyphens, 2–40 characters. Checked here
+// too, not just left to the server, so a bad code is a field message before Create is even
+// clicked rather than a round trip that comes back as a trace id.
+const CODE_PATTERN = /^[a-z0-9-]{2,40}$/;
+
 function validatePublisherForm(values) {
   const found = {};
-  if (!values.code.trim()) found.code = 'Enter a code.';
+  const trimmedCode = values.code.trim();
+  if (!trimmedCode) found.code = 'Enter a code.';
+  else if (!CODE_PATTERN.test(trimmedCode)) {
+    found.code = 'Code must be lowercase letters, digits and hyphens, 2–40 characters.';
+  }
   if (!values.name.trim()) found.name = 'Enter a name.';
   else if (values.name.trim().length > 200) {
     found.name = 'A name can be at most 200 characters.';
@@ -25,21 +36,26 @@ function validatePublisherForm(values) {
 /**
  * Create and edit share this form. A null publisher means create.
  *
- * `backTo` is the address of the page this form was opened from. The other four form screens
- * each open with a "Back to ..." link above their heading; this form is rendered straight into
- * a route rather than wrapped by a screen, so it carries its own. Left out, no link is shown.
+ * Rendered through PublishersScreen's own `<Outlet/>` (see App.jsx's nested `/publishers`
+ * routes), not in place of it — the address is still real (create at /publishers/new, edit at
+ * /publishers/:publisherId/edit), but the list stays mounted underneath, so `.modal-backdrop`
+ * dims and blurs the real table, matching Stitch's own modal instead of a form floating in an
+ * empty page.
+ *
+ * That same persistence is why this reloads the list itself on unmount: before the list
+ * stayed mounted, returning to /publishers was always a fresh PublishersScreen, which fetched
+ * fresh for free. Now it's the same PublishersScreen the whole time, so a status edit that
+ * landed on the server would otherwise go on showing the row's old status until a manual
+ * reload. Runs on unmount rather than only after a save so Cancel and the close button
+ * reload it too — harmless (the same filters, re-asked), and one rule instead of several call
+ * sites to keep in sync.
  */
 // eslint-disable-next-line complexity
-export default function PublisherForm({
-  publisher = null,
-  onSaved,
-  onCancel,
-  backTo,
-  backLabel = 'Back',
-}) {
+export default function PublisherForm({ publisher = null, onSaved, onCancel }) {
   const editing = publisher !== null;
   const toast = useToast();
   const navigate = useNavigate();
+  const { reload: reloadList } = useOutletContext() ?? {};
 
   const [form, setForm] = useState({
     code: publisher?.code?.toLowerCase() ?? '',
@@ -50,14 +66,19 @@ export default function PublisherForm({
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => () => reloadList?.(), [reloadList]);
+
   function change(name, value) {
     setForm((current) => ({ ...current, [name]: value }));
     setErrors((current) => (current[name] ? { ...current, [name]: undefined } : current));
   }
 
-  // Publisher codes are sent to the backend in lowercase.
+  // Publisher codes are sent to the backend lowercase, matching CODE_PATTERN above — any
+  // character that pattern would reject (a space, an underscore, an uppercase letter typed
+  // and not just auto-capitalised by a mobile keyboard) is dropped as it's typed, rather than
+  // kept on screen and only rejected later at Create.
   function changeCode(name, value) {
-    change(name, value.toLowerCase());
+    change(name, value.toLowerCase().replace(/[^a-z0-9-]/g, ''));
   }
 
   // Optional fields are left out rather than sent empty: logoUrl is a uri in the contract.
@@ -101,61 +122,100 @@ export default function PublisherForm({
     else navigate('/publishers');
   }
 
+  // The logo preview chip mirrors the row avatar on the publishers list: initials from the
+  // code, since a code is always present and a name is neither guaranteed nor bounded.
+  const previewInitials = (form.code || form.name).slice(0, 2).toUpperCase();
+
   return (
-    <section className="card">
-      {backTo ? (
-        <div className="row-buttons">
-          <Link className="btn" to={backTo}>
-            {backLabel}
-          </Link>
+    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="publisher-form-title">
+      <div className="modal-card">
+        <div className="modal-header">
+          <h2 className="modal-title" id="publisher-form-title">
+            {editing ? 'Edit publisher' : 'New publisher'}
+          </h2>
+          <button
+            type="button"
+            className="modal-close"
+            aria-label="Cancel and go back"
+            onClick={handleCancel}
+          >
+            <Icon name="close" />
+          </button>
         </div>
-      ) : null}
-      <h1>{editing ? 'Edit publisher' : 'New publisher'}</h1>
 
-      <form onSubmit={handleSubmit} noValidate>
-        <TextField
-          label="Code"
-          name="code"
-          value={form.code}
-          onChange={changeCode}
-          error={errors.code}
-          placeholder="rtlg"
-          disabled={saving || editing}
-          autoFocus
-        />
-        <TextField
-          label="Name"
-          name="name"
-          value={form.name}
-          onChange={change}
-          error={errors.name}
-          placeholder="Routledge"
-          disabled={saving}
-        />
-        <TextField
-          label="Description"
-          name="description"
-          value={form.description}
-          onChange={change}
-          error={errors.description}
-          disabled={saving}
-        />
-        <TextField
-          label="Logo address"
-          name="logoUrl"
-          value={form.logoUrl}
-          onChange={change}
-          error={errors.logoUrl}
-          placeholder="https://cdn.tf/logos/routledge.png"
-          disabled={saving}
-        />
+        <form onSubmit={handleSubmit} noValidate aria-labelledby="publisher-form-title">
+          <div className="modal-body">
+            <div className="field-grid-2">
+              <TextField
+                label="Code"
+                name="code"
+                value={form.code}
+                onChange={changeCode}
+                error={errors.code}
+                placeholder="rtlg"
+                disabled={saving || editing}
+                required
+                autoFocus
+                hint={editing ? undefined : 'Lowercase letters, digits and hyphens only.'}
+              />
+              <TextField
+                label="Name"
+                name="name"
+                value={form.name}
+                onChange={change}
+                error={errors.name}
+                placeholder="Routledge"
+                disabled={saving}
+                required
+              />
+            </div>
+            <TextField
+              label="Description"
+              name="description"
+              value={form.description}
+              onChange={change}
+              error={errors.description}
+              disabled={saving}
+              multiline
+              rows={3}
+              maxLength={1000}
+              hint={`${form.description.length} / 1000`}
+            />
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-sm)' }}>
+              <div style={{ flex: 1 }}>
+                <TextField
+                  label="Logo address"
+                  name="logoUrl"
+                  value={form.logoUrl}
+                  onChange={change}
+                  error={errors.logoUrl}
+                  placeholder="https://cdn.tf/logos/routledge.png"
+                  disabled={saving}
+                />
+              </div>
+              <span
+                className="table-entity-avatar"
+                aria-hidden="true"
+                style={{ marginTop: 28 }}
+              >
+                {previewInitials}
+              </span>
+            </div>
+            <p className="muted small">
+              Suspending or delisting a publisher immediately pauses catalogue distribution
+              across every institution&rsquo;s feed.
+            </p>
+          </div>
 
-        <FormActions
-          onCancel={handleCancel}
-          saving={saving}
-          saveLabel={editing ? 'Save changes' : 'Create publisher'}
-        />
-      </form>
-    </section>
+          <div className="modal-footer">
+            <FormActions
+              onCancel={handleCancel}
+              saving={saving}
+              saveLabel={editing ? 'Save changes' : 'Create publisher'}
+            />
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }

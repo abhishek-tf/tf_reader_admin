@@ -103,6 +103,12 @@ export default function App() {
           }
         />
 
+        {/* Nested, not three flat routes: BooksScreen renders for every /books/* address and
+            stays mounted underneath, with an <Outlet/> for whichever child path is active.
+            That's what lets the create/edit drawer overlay the real table, blurred through
+            its backdrop, instead of replacing it outright — the address still changes
+            (/books/new, /books/:itemId/edit), same as every other create/edit route in this
+            app, just without unmounting the list to get there. */}
         <Route
           path="/books"
           element={
@@ -110,23 +116,10 @@ export default function App() {
               <BooksScreen />
             </RequireAuth>
           }
-        />
-        <Route
-          path="/books/new"
-          element={
-            <RequireAuth roles={BOOK_ROLES}>
-              <BookFormScreen />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/books/:itemId/edit"
-          element={
-            <RequireAuth roles={BOOK_ROLES}>
-              <BookFormScreen />
-            </RequireAuth>
-          }
-        />
+        >
+          <Route path="new" element={<BookFormScreen />} />
+          <Route path=":itemId/edit" element={<BookFormScreen />} />
+        </Route>
 
         <Route
           path="/shelves"
@@ -146,6 +139,13 @@ export default function App() {
           }
         />
 
+        {/* Nested, not three flat routes: PublishersScreen renders for /publishers and its
+            children, staying mounted underneath with an <Outlet/> for whichever child path is
+            active — the same "list stays behind the modal, blurred" treatment /books/new and
+            /books/:itemId/edit use, on the same real addresses as before. The publisher's own
+            detail page (/publishers/:publisherId, no /edit suffix) is a separate, unnested
+            route below — a different literal path, so nesting new/edit here does not shadow
+            it. */}
         <Route
           path="/publishers"
           element={
@@ -153,28 +153,15 @@ export default function App() {
               <PublishersScreen />
             </RequireAuth>
           }
-        />
-        <Route
-          path="/publishers/new"
-          element={
-            <RequireAuth roles={PUBLISHER_ROLES}>
-              <PublisherForm backTo="/publishers" backLabel="Back to publishers" />
-            </RequireAuth>
-          }
-        />
+        >
+          <Route path="new" element={<PublisherForm />} />
+          <Route path=":publisherId/edit" element={<PublisherEditScreen />} />
+        </Route>
         <Route
           path="/publishers/:publisherId"
           element={
             <RequireAuth roles={PUBLISHER_ROLES}>
               <PublisherDetailScreen />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/publishers/:publisherId/edit"
-          element={
-            <RequireAuth roles={PUBLISHER_ROLES}>
-              <PublisherEditScreen />
             </RequireAuth>
           }
         />

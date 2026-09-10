@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import Icon from '../ui/Icon.jsx';
 
 /**
  * The side menu.
@@ -14,21 +15,33 @@ import { NavLink } from 'react-router-dom';
  * console is visible without pretending a screen is there.
  */
 export const ENTRIES = [
-  { to: '/publishers', label: 'Publishers', roles: ['SUPER_ADMIN', 'PUBLISHER_ADMIN'] },
-  { to: '/books', label: 'Books', roles: ['SUPER_ADMIN', 'PUBLISHER_ADMIN'] },
+  {
+    to: '/publishers',
+    label: 'Publishers',
+    icon: 'menu_book',
+    roles: ['SUPER_ADMIN', 'PUBLISHER_ADMIN'],
+  },
+  { to: '/books', label: 'Books', icon: 'auto_stories', roles: ['SUPER_ADMIN', 'PUBLISHER_ADMIN'] },
   {
     to: '/institutions',
     label: 'Institutions',
+    icon: 'account_balance',
     roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN'],
   },
-  { to: '/shelves', label: 'Shelves', roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN'] },
+  {
+    to: '/shelves',
+    label: 'Shelves',
+    icon: 'shelves',
+    roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN'],
+  },
   {
     to: '/entitlements',
     label: 'Entitlements',
+    icon: 'verified_user',
     roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN'],
   },
-  { to: '/operators', label: 'Operators', roles: ['SUPER_ADMIN'] },
-  { to: '/audit', label: 'Audit log', roles: ['SUPER_ADMIN'] },
+  { to: '/operators', label: 'Operators', icon: 'admin_panel_settings', roles: ['SUPER_ADMIN'] },
+  { to: '/audit', label: 'Audit log', icon: 'history', roles: ['SUPER_ADMIN'] },
 ];
 
 // Where "/" sends a role the moment it signs in, and where NotAuthorized's "Go to Home" sends
@@ -62,6 +75,7 @@ export default function SideMenu({ role, collapsed = false, onNavigate }) {
             <li key={entry.to}>
               {entry.soon ? (
                 <span className="side-soon" title="Not built yet">
+                  {entry.icon ? <Icon name={entry.icon} className="side-icon" /> : null}
                   {entry.label}
                 </span>
               ) : (
@@ -70,6 +84,7 @@ export default function SideMenu({ role, collapsed = false, onNavigate }) {
                   className={({ isActive }) => (isActive ? 'side-on' : undefined)}
                   onClick={onNavigate}
                 >
+                  {entry.icon ? <Icon name={entry.icon} className="side-icon" /> : null}
                   {entry.label}
                 </NavLink>
               )}

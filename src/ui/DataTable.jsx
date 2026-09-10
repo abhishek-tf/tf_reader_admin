@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react';
+import Icon from './Icon.jsx';
+import Button from './Button.jsx';
 
 /**
  * One reusable table for the whole console.
@@ -19,6 +21,10 @@ import { useMemo, useState } from 'react';
  * Sorting works two ways. Give it `onSortChange` and it hands the sort key back for the API
  * to apply, which is right for a paged list where the client has one page of many. Leave
  * that out and it sorts the rows it already has, which is right for a small fixed list.
+ *
+ * `header`, if given, renders inside the same bordered card as the table, above it — for the
+ * "N things listed" strip a screen already knows the count for. Left out, the table is exactly
+ * what it always was; existing callers are unaffected.
  */
 export default function DataTable({
   columns,
@@ -30,6 +36,7 @@ export default function DataTable({
   onRetry,
   sort,
   onSortChange,
+  header,
 }) {
   const [localSort, setLocalSort] = useState(null);
   const serverSorted = typeof onSortChange === 'function';
@@ -58,9 +65,9 @@ export default function DataTable({
     else setLocalSort({ key, direction });
   }
 
-  function arrow(key) {
-    if (active?.key !== key) return '';
-    return active.direction === 'asc' ? ' ↑' : ' ↓';
+  function sortIcon(key) {
+    if (active?.key !== key) return 'unfold_more';
+    return active.direction === 'asc' ? 'arrow_upward' : 'arrow_downward';
   }
 
   const body = () => {
@@ -79,11 +86,7 @@ export default function DataTable({
           <td className="table-state table-state-error" colSpan={columns.length}>
             <p>{error.friendly ?? error.message ?? 'Could not load this list.'}</p>
             {error.traceId ? <p className="trace">Trace {error.traceId}</p> : null}
-            {onRetry ? (
-              <button type="button" className="btn" onClick={onRetry}>
-                Try again
-              </button>
-            ) : null}
+            {onRetry ? <Button onClick={onRetry}>Try again</Button> : null}
           </td>
         </tr>
       );
@@ -108,6 +111,7 @@ export default function DataTable({
 
   return (
     <div className="table-wrap">
+      {header ? <div className="table-toolbar">{header}</div> : null}
       <table className="table">
         <colgroup>
           {columns.map((column) => (
@@ -126,7 +130,7 @@ export default function DataTable({
                     aria-label={`Sort by ${column.label}`}
                   >
                     {column.label}
-                    {arrow(column.key)}
+                    <Icon name={sortIcon(column.key)} className="th-sort-icon" />
                   </button>
                 ) : (
                   column.label
