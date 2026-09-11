@@ -1024,6 +1024,11 @@ h2 {
 .book-cover-thumb-placeholder .material-symbols-outlined {
   font-size: 18px;
 }
+/* The cover thumbnail while its image is still resolving - same spin every other mid-request
+   icon in this app already uses (.badge-PROCESSING, .upload-dropzone-busy), not a new one. */
+.cover-thumb-spinner {
+  animation: badge-spin 900ms linear infinite;
+}
 
 /* A book's content format (PDF/EPUB/AUDIO), with a lock glyph appended when the encryption
    rule (shared.md) says this combination of format and tier is actually encrypted. */
@@ -1042,6 +1047,17 @@ h2 {
 }
 .format-chip .material-symbols-outlined {
   color: var(--slate);
+}
+
+/* The Books page tree: a Journal/Volume/Issue row's expand/collapse toggle reuses
+   .btn-icon-ghost as-is, so it needs no rule of its own. A childless nested row (e.g. a leaf
+   Article) gets this same-width invisible spacer instead, so its cover thumb still lines up
+   with an expandable sibling row's. */
+.row-tree-spacer {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
 }
 
 /* An icon-only row action — Stitch's action-cluster button, borderless until hovered. */
