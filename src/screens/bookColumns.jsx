@@ -17,12 +17,35 @@ function isEncrypted(row) {
   return row.contentType !== 'AUDIO' && row.accessTier !== 'OPEN_ACCESS';
 }
 
-export const COLUMNS = [
+/**
+ * Columns for the Books table. A function, not a plain array, because the title column's
+ * expand/collapse toggle needs `onToggleExpand` from useBooks - everything else is unchanged
+ * from a flat row's point of view.
+ *
+ * Rows may now carry `depth`/`hasChildren`/`isExpanded` (see bookTree.js's flattenVisible), but
+ * a standalone BOOK - depth 0, no children - gets neither the toggle button nor the spacer and
+ * `paddingLeft: 0`, so it renders exactly as it always has.
+ */
+export function getColumns(onToggleExpand) {
+  return [
   {
     key: 'title',
     label: 'Title & authors',
     render: (row) => (
-      <div className="table-entity">
+      <div className="table-entity" style={{ paddingLeft: row.depth ? row.depth * 20 : 0 }}>
+        {row.hasChildren ? (
+          <button
+            type="button"
+            className="btn-icon-ghost row-tree-toggle"
+            onClick={() => onToggleExpand(row.id)}
+            aria-label={row.isExpanded ? `Collapse ${row.title}` : `Expand ${row.title}`}
+            aria-expanded={row.isExpanded}
+          >
+            <Icon name={row.isExpanded ? 'expand_more' : 'chevron_right'} />
+          </button>
+        ) : row.depth ? (
+          <span className="row-tree-spacer" aria-hidden="true" />
+        ) : null}
         {row.coverUrl ? (
           <img src={row.coverUrl} alt="" className="book-cover-thumb" aria-hidden="true" />
         ) : (
@@ -92,4 +115,5 @@ export const COLUMNS = [
       </Link>
     ),
   },
-];
+  ];
+}

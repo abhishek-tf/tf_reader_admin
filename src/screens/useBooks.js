@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { listCatalogueItems } from '../api/catalogueItems.js';
 import { listPublishers } from '../api/publishers.js';
 import { fetchAllPages } from '../api/client.js';
+import { buildCatalogueTree, flattenVisible } from './bookTree.js';
 
 const PAGE_SIZE = 20;
 // Server-side page size for the walk below - deliberately larger than PAGE_SIZE, since this
@@ -39,6 +40,11 @@ export function useBooks() {
   const [list, setList] = useState({ items: [], loading: true, error: null });
   const [suspendedPublisherIds, setSuspendedPublisherIds] = useState(() => new Set());
   const [publisherOptions, setPublisherOptions] = useState([]);
+  // Which Journal/Volume/Issue rows are expanded, by id. Collapsed by default. Not reset on a
+  // filter/tab change or a retry() reload - ids are stable across a refetch, and a stale id
+  // left in here is harmless, since flattenVisible only ever consults it for a node that is
+  // actually present in whatever subtree it is flattening.
+  const [expandedIds, setExpandedIds] = useState(() => new Set());
 
   // Loaded once, not re-run per page or filter change: matches what the backend already does
   // for entitlement checks and OPDS feeds, where a suspended publisher's whole catalogue
@@ -105,6 +111,15 @@ export function useBooks() {
 
   const retry = useCallback(() => load(), [load]);
 
+  const toggleExpand = useCallback((id) => {
+    setExpandedIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
   function updateFilters(patch) {
     setFilters((current) => ({ ...current, ...patch }));
     setPage(0);
@@ -134,9 +149,15 @@ export function useBooks() {
   const segmentedItems =
     statusTab === 'ALL' ? visibleItems : visibleItems.filter((item) => item.status === statusTab);
 
-  // Paginated here, over the already-filtered set, not by the server: `page` only slices
-  // what is already loaded, so changing it does not refetch anything.
-  const pageItems = segmentedItems.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+  // Grouped into a Journal -> Volume -> Issue -> Article tree, then paginated over the root
+  // nodes rather than the flat item list: a Journal and its whole subtree can never be split
+  // across two pages this way. `page` still only slices what is already loaded - changing it
+  // does not refetch anything. Each page's roots are flattened (respecting `expandedIds`) into
+  // exactly the rows the table renders, so a collapsed Journal contributes one row, not one
+  // per Article underneath it.
+  const roots = buildCatalogueTree(segmentedItems);
+  const pageRoots = roots.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+  const pageItems = flattenVisible(pageRoots, expandedIds);
 
   return {
     filters,
@@ -149,12 +170,15 @@ export function useBooks() {
     setPage,
     pageSize: PAGE_SIZE,
     pageItems,
-    total: segmentedItems.length,
+    // Root count, not flat item count: a collapsed Journal with a dozen Articles under it
+    // counts as one here, matching what "N books listed" and the pager actually page through.
+    total: roots.length,
     loading: list.loading,
     error: list.error,
     retry,
     hiddenCount,
     visibleCount: visibleItems.length,
     publisherOptions,
+    toggleExpand,
   };
 }

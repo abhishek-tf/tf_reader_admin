@@ -8,7 +8,7 @@ import Tabs from '../ui/Tabs.jsx';
 import Button from '../ui/Button.jsx';
 import RouteErrorBoundary from '../ui/RouteErrorBoundary.jsx';
 import { useBooks, STATUS_TABS } from './useBooks.js';
-import { COLUMNS } from './bookColumns.jsx';
+import { getColumns } from './bookColumns.jsx';
 
 const CONTENT_TYPE_OPTIONS = [
   { value: 'PDF', label: 'PDF' },
@@ -116,7 +116,7 @@ export default function BooksScreen() {
       <BookFilters b={b} />
 
       <DataTable
-        columns={COLUMNS}
+        columns={getColumns(b.toggleExpand)}
         rows={b.pageItems}
         loading={b.loading}
         error={b.error}
