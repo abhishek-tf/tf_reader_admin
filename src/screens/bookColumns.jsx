@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import StatusBadge from '../ui/StatusBadge.jsx';
 import IngestStateBadge from '../ui/IngestStateBadge.jsx';
 import Icon from '../ui/Icon.jsx';
+import CoverThumb from '../ui/CoverThumb.jsx';
 
 const TIER_LABEL = {
   OPEN_ACCESS: 'Open access',
@@ -46,13 +47,12 @@ export function getColumns(onToggleExpand) {
         ) : row.depth ? (
           <span className="row-tree-spacer" aria-hidden="true" />
         ) : null}
-        {row.coverUrl ? (
-          <img src={row.coverUrl} alt="" className="book-cover-thumb" aria-hidden="true" />
-        ) : (
-          <span className="book-cover-thumb book-cover-thumb-placeholder" aria-hidden="true">
-            <Icon name={row.contentType === 'AUDIO' ? 'headphones' : 'menu_book'} />
-          </span>
-        )}
+        <CoverThumb
+          id={row.id}
+          coverUrl={row.coverUrl}
+          contentType={row.contentType}
+          updatedAt={row.updatedAt}
+        />
         <div className="table-entity-text">
           <Link to={`/books/${row.id}/edit`} className="row-link row-link-emphasis">
             {row.title}
