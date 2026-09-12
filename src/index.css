@@ -856,15 +856,64 @@ h2 {
 
 /* ── login ────────────────────────────────────────────────────────────────── */
 .login-page {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100%;
+  min-height: 100vh;
   padding: var(--gap);
+  overflow: hidden;
+  background: radial-gradient(
+      1200px 600px at 15% 10%,
+      var(--surface-container-low) 0%,
+      transparent 60%
+    ),
+    radial-gradient(900px 500px at 85% 90%, var(--surface-container-low) 0%, transparent 55%),
+    var(--surface-page);
+}
+.login-decoration {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+/* A one-time "hand drawn" reveal: each path/circle starts fully hidden behind its own dash gap
+   and draws in over the stroke. Values are generous round numbers rather than each shape's
+   exact length — a dash longer than the path just means it finishes early, which still reads
+   as "drawn in" and avoids computing a precise path length per shape. */
+.login-decoration-line {
+  stroke-dasharray: 340;
+  stroke-dashoffset: 340;
+  animation: login-draw-in 2.4s ease-out forwards;
+}
+.login-decoration-line:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.login-decoration-line:nth-child(3) {
+  animation-delay: 0.3s;
+}
+.login-decoration-line:nth-child(n + 4) {
+  animation-delay: 0.5s;
+}
+@keyframes login-draw-in {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .login-decoration-line {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
 }
 .login-card {
+  position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 360px;
+  box-shadow: var(--shadow-popover);
 }
 .login-logo {
   height: 45px;
@@ -2323,4 +2372,105 @@ h2 {
 .role-chip-muted {
   background: var(--surface-container-low);
   color: var(--slate);
+}
+
+/* ── dashboard ────────────────────────────────────────────────────────────────
+ * Stitch's own "Admin Dashboard": a single bordered strip divided into columns by rules,
+ * rather than four separate KpiCards — kept as its own pattern instead of reusing .kpi-grid,
+ * since matching this screen's own layout is the point. */
+.stat-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.stat-strip-item {
+  padding: var(--space-md) var(--space-lg);
+  border-left: 1px solid var(--line);
+}
+.stat-strip-item:first-child {
+  border-left: none;
+}
+.stat-strip-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--slate);
+  font-weight: 700;
+  margin-bottom: var(--space-2xs);
+}
+.stat-strip-value {
+  font-family: var(--font-aleo, inherit);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--carbon);
+  line-height: 1;
+}
+.stat-strip-helper {
+  margin-top: var(--space-2xs);
+  font-size: 12px;
+  color: var(--slate);
+}
+/* The one metric worth a second look at a glance (Pending Approvals) - a warm tint instead of
+   the neutral panel colour, same coral the rest of the app already uses for "needs attention". */
+.stat-strip-item-highlight {
+  background: var(--coral-neutral);
+}
+.stat-strip-item-highlight .stat-strip-label,
+.stat-strip-item-highlight .stat-strip-value,
+.stat-strip-item-highlight .stat-strip-helper {
+  color: var(--coral-dark);
+}
+@media (max-width: 860px) {
+  .stat-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 480px) {
+  .stat-strip {
+    grid-template-columns: 1fr;
+  }
+  .stat-strip-item {
+    border-left: none;
+    border-top: 1px solid var(--line);
+  }
+  .stat-strip-item:first-child {
+    border-top: none;
+  }
+}
+
+/* The two-column operational layout under the stat strip - a wide panel (the ingest queue or
+   equivalent) beside one or two narrower ones (pending items, recent activity). */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--space-lg);
+  align-items: start;
+}
+@media (max-width: 960px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.dashboard-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+.dashboard-list-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+  padding: var(--space-sm) 0;
+}
+.dashboard-list-row + .dashboard-list-row {
+  border-top: 1px solid var(--line);
+}
+.dashboard-list-row-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
 }

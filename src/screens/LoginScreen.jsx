@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthContext.jsx';
 import { useToast } from '../ui/ToastContext.jsx';
 import TextField from '../ui/TextField.jsx';
 import FormActions from '../ui/FormActions.jsx';
+import { LoginDecoration } from '../ui/pageDecorations.jsx';
 import logo from '../assets/tf-logo-indigo.svg';
 
 // Inline rather than a library: there is no icon package in this project, and STYLE.md rules
@@ -117,6 +118,7 @@ export default function LoginScreen() {
 
   return (
     <div className="login-page">
+      <LoginDecoration />
       <form className="card login-card" onSubmit={handleSubmit} noValidate>
         <img src={logo} alt="Taylor & Francis" className="login-logo" />
         <h1>Sign in</h1>

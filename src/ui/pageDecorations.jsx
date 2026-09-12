@@ -11,3 +11,5 @@ export { default as InstitutionsDecoration } from './pageDecorations/Institution
 export { default as ShelvesDecoration } from './pageDecorations/ShelvesDecoration.jsx';
 export { default as EntitlementsDecoration } from './pageDecorations/EntitlementsDecoration.jsx';
 export { default as OperatorsAuditDecoration } from './pageDecorations/OperatorsAuditDecoration.jsx';
+export { default as DashboardDecoration } from './pageDecorations/DashboardDecoration.jsx';
+export { default as LoginDecoration } from './pageDecorations/LoginDecoration.jsx';

@@ -4,6 +4,7 @@ import RequireAuth from './auth/RequireAuth.jsx';
 import { ENTRIES, homeRouteForRole } from './layout/SideMenu.jsx';
 import { useAuth } from './auth/AuthContext.jsx';
 import LoginScreen from './screens/LoginScreen.jsx';
+import DashboardScreen from './screens/DashboardScreen.jsx';
 import BooksScreen from './screens/BooksScreen.jsx';
 import BookFormScreen from './screens/BookFormScreen.jsx';
 import ShelvesScreen from './screens/ShelvesScreen.jsx';
@@ -76,6 +77,10 @@ export default function App() {
         }
       >
         <Route path="/" element={<RoleHome />} />
+
+        {/* No `roles` restriction on RequireAuth here — every signed-in role has a dashboard;
+            DashboardScreen itself is what varies by role, same split EntitlementsScreen uses. */}
+        <Route path="/dashboard" element={<DashboardScreen />} />
 
         {/* Nested, not three flat routes — same reasoning as /books below: InstitutionsScreen
             renders for every /institutions/* address and stays mounted underneath, with an
