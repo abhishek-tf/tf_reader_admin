@@ -22,6 +22,13 @@ function formatCount(value) {
   return value == null ? null : value.toLocaleString();
 }
 
+// The row itself also navigates (see InstitutionsScreen's onRowClick), to the same address a
+// click anywhere else in the row would reach. Without this, a click that started on one of
+// these links/buttons still bubbles up to the row's own handler once it's done, racing it.
+function stopRowClick(event) {
+  event.stopPropagation();
+}
+
 /**
  * Columns for the Institutions table, matching Stitch's "Institution & Country" layout. Every
  * field here is a real one on `AdminInstitution` (wokay-api.yaml) — `type` and
@@ -50,7 +57,11 @@ export function buildInstitutionColumns({ onToggleStatus, pendingIds }) {
             </span>
           )}
           <div className="table-entity-text">
-            <Link to={`/institutions/${row.id}`} className="row-link row-link-emphasis">
+            <Link
+              to={`/institutions/${row.id}`}
+              className="row-link row-link-emphasis"
+              onClick={stopRowClick}
+            >
               {row.name}
             </Link>
             <span className="table-entity-sub">
@@ -103,6 +114,7 @@ export function buildInstitutionColumns({ onToggleStatus, pendingIds }) {
             to={`/institutions/${row.id}/edit`}
             aria-label={`Edit ${row.name}`}
             title="Edit"
+            onClick={stopRowClick}
           >
             <Icon name="edit" />
           </Link>
@@ -110,7 +122,10 @@ export function buildInstitutionColumns({ onToggleStatus, pendingIds }) {
             type="button"
             className="btn-icon-ghost"
             disabled={pendingIds.has(row.id)}
-            onClick={() => onToggleStatus(row)}
+            onClick={(event) => {
+              stopRowClick(event);
+              onToggleStatus(row);
+            }}
             aria-label={row.status === 'ACTIVE' ? `Suspend ${row.name}` : `Reactivate ${row.name}`}
             title={row.status === 'ACTIVE' ? 'Suspend' : 'Reactivate'}
           >

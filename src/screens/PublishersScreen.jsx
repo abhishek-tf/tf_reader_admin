@@ -1,4 +1,4 @@
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import DataTable from '../ui/DataTable.jsx';
 import Pagination from '../ui/Pagination.jsx';
 import FilterBar from '../ui/FilterBar.jsx';
@@ -22,7 +22,12 @@ function KpiRow({ kpis }) {
   const activePercent = kpis ? Math.round((kpis.active / Math.max(kpis.total, 1)) * 100) : null;
   return (
     <div className="kpi-grid">
-      <KpiCard label="Total Publishers" value={kpis?.total ?? '—'} icon="domain" helper="Catalogue total" />
+      <KpiCard
+        label="Total Publishers"
+        value={kpis?.total ?? '—'}
+        icon="domain"
+        helper="Catalogue total"
+      />
       <KpiCard
         label="Active Publishers"
         value={kpis?.active ?? '—'}
@@ -36,7 +41,12 @@ function KpiRow({ kpis }) {
         icon="pause_circle"
         helper="None pending"
       />
-      <KpiCard label="Total Collections" value={kpis?.collections ?? '—'} icon="folder_copy" helper="Active sets" />
+      <KpiCard
+        label="Total Collections"
+        value={kpis?.collections ?? '—'}
+        icon="folder_copy"
+        helper="Active sets"
+      />
     </div>
   );
 }
@@ -113,6 +123,7 @@ export default function PublishersScreen() {
   const canCreate = user.role === 'SUPER_ADMIN';
   const p = usePublishers();
   const location = useLocation();
+  const navigate = useNavigate();
 
   function handleSubmit(event) {
     event.preventDefault();
@@ -150,6 +161,7 @@ export default function PublishersScreen() {
         }
         onRetry={p.retry}
         header={!p.loading && !p.error ? <TableHeader total={p.total} /> : null}
+        onRowClick={(row) => navigate(`/publishers/${row.id}`)}
       />
 
       {!p.error && p.total > 0 ? (

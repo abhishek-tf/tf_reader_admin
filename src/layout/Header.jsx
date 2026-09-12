@@ -23,6 +23,56 @@ function initialsOf(label) {
   return label.trim().slice(0, 2).toUpperCase();
 }
 
+/** Whichever scope dimension the role uses - a full-access operator is confined to neither,
+ * and there is nothing to show a second row for. */
+function scopeOf(user) {
+  if (user.scopePublisherId) return { label: 'Publisher scope', value: user.scopePublisherId };
+  if (user.scopeInstitutionId)
+    return { label: 'Institution scope', value: user.scopeInstitutionId };
+  return null;
+}
+
+/**
+ * The dropdown's own content: the signed-in operator's identity in full (name, email, role,
+ * scope), not just Sign out underneath the same truncated name/role the toggle already showed.
+ * Split out of Header, which was over the complexity budget with this inline.
+ */
+function ProfileMenu({ user, displayName, onSignOut, signingOut }) {
+  const scope = scopeOf(user);
+  return (
+    <div className="profile-menu" role="menu">
+      <div className="profile-menu-header">
+        <span className="profile-avatar profile-avatar-lg" aria-hidden="true">
+          {initialsOf(displayName)}
+        </span>
+        <span className="profile-menu-identity">
+          <span className="profile-menu-name">{displayName}</span>
+          {user.name ? <span className="profile-menu-email">{user.email}</span> : null}
+        </span>
+      </div>
+      <dl className="profile-menu-details">
+        <div className="profile-menu-detail-row">
+          <dt>Role</dt>
+          <dd>
+            <span className="role-chip">{user.role}</span>
+          </dd>
+        </div>
+        {scope ? (
+          <div className="profile-menu-detail-row">
+            <dt>{scope.label}</dt>
+            <dd className="code-chip-plain">{scope.value}</dd>
+          </div>
+        ) : null}
+      </dl>
+      <div className="profile-menu-footer">
+        <Button onClick={onSignOut} disabled={signingOut}>
+          {signingOut ? 'Signing out...' : 'Sign out'}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 /**
  * The header: the menu toggle, product name, and who is signed in.
  *
@@ -123,11 +173,12 @@ export default function Header({ menuCollapsed = false, fullWidth = false, onTog
             </button>
 
             {menuOpen ? (
-              <div className="profile-menu">
-                <Button onClick={handleSignOut} disabled={signingOut}>
-                  {signingOut ? 'Signing out...' : 'Sign out'}
-                </Button>
-              </div>
+              <ProfileMenu
+                user={user}
+                displayName={displayName}
+                onSignOut={handleSignOut}
+                signingOut={signingOut}
+              />
             ) : null}
           </div>
         ) : null}

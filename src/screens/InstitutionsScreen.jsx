@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import DataTable from '../ui/DataTable.jsx';
 import FilterBar from '../ui/FilterBar.jsx';
@@ -82,6 +82,7 @@ export default function InstitutionsScreen() {
   const list = useInstitutions();
   const toast = useToast();
   const location = useLocation();
+  const navigate = useNavigate();
   const [pendingStatusIds, setPendingStatusIds] = useState(() => new Set());
   // The row a Suspend/Reactivate click is waiting to be confirmed for, plus the reason text
   // typed so far. Not a window.prompt: a native browser prompt is silently blocked (returns
@@ -148,6 +149,7 @@ export default function InstitutionsScreen() {
         error={list.error}
         emptyMessage="No institutions match this filter."
         onRetry={list.reload}
+        onRowClick={(row) => navigate(`/institutions/${row.id}`)}
         header={
           !list.loading && !list.error ? (
             <span>
