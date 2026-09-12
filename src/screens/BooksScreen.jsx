@@ -77,17 +77,17 @@ function HiddenCountNotice({ b }) {
   if (b.error || b.loading || b.hiddenCount === 0 || b.visibleCount === 0) return null;
   return (
     <p className="muted small">
-      Also hidden: {b.hiddenCount} more book{b.hiddenCount === 1 ? '' : 's'} matching these
-      filters, whose publisher is suspended.
+      Also hidden: {b.hiddenCount} more catalogue item{b.hiddenCount === 1 ? '' : 's'} matching
+      these filters, whose publisher is suspended.
     </p>
   );
 }
 
 function emptyMessageFor(b) {
   if (b.hiddenCount > 0 && b.visibleCount === 0) {
-    return 'Every book matching these filters belongs to a suspended publisher, so none are shown.';
+    return 'Every catalogue item matching these filters belongs to a suspended publisher, so none are shown.';
   }
-  return 'No books match these filters.';
+  return 'No catalogue items match these filters.';
 }
 
 export default function BooksScreen() {
@@ -97,12 +97,12 @@ export default function BooksScreen() {
   return (
     <div className="stack">
       <PageHeader
-        title="Books"
+        title="Catalogue items"
         subtitle="The console's catalogue, filtered by tier, type and publisher."
         decoration={<BooksDecoration />}
         actions={
           <Button as={Link} variant="primary" icon="add" to="/books/new">
-            Add book
+            Add catalogue item
           </Button>
         }
       />
@@ -122,7 +122,13 @@ export default function BooksScreen() {
         error={b.error}
         emptyMessage={emptyMessageFor(b)}
         onRetry={b.retry}
-        header={!b.loading && !b.error ? <span>{b.total} book{b.total === 1 ? '' : 's'} listed</span> : null}
+        header={
+          !b.loading && !b.error ? (
+            <span>
+              {b.total} catalogue item{b.total === 1 ? '' : 's'} listed
+            </span>
+          ) : null
+        }
       />
       <HiddenCountNotice b={b} />
       {/* Guarded like every other list: unguarded, Previous/Next and "Page 1 of 1 · 0 total"

@@ -139,11 +139,21 @@ export function useBooks() {
   const visibleItems = list.items.filter((item) => !suspendedPublisherIds.has(item.publisherId));
   const hiddenCount = list.items.length - visibleItems.length;
 
+  // Root count per tab, not flat item count — a Journal with a dozen Articles nested under it
+  // is one row on this page, not a dozen, so the tab badge has to count the same way the pager
+  // and "N catalogue items listed" already do. Counting tabs by flat item count instead (as
+  // this once did) put a bigger number on the "All" tab than the pager's own total ever showed,
+  // which read as "there are 83 items but I can't page past the first 12" — the tree grouping
+  // was real, the mismatched count next to it was not.
+  function rootCount(items) {
+    return buildCatalogueTree(items).length;
+  }
+
   const tabCounts = {
-    ALL: visibleItems.length,
-    PUBLISHED: visibleItems.filter((item) => item.status === 'PUBLISHED').length,
-    DRAFT: visibleItems.filter((item) => item.status === 'DRAFT').length,
-    ARCHIVED: visibleItems.filter((item) => item.status === 'ARCHIVED').length,
+    ALL: rootCount(visibleItems),
+    PUBLISHED: rootCount(visibleItems.filter((item) => item.status === 'PUBLISHED')),
+    DRAFT: rootCount(visibleItems.filter((item) => item.status === 'DRAFT')),
+    ARCHIVED: rootCount(visibleItems.filter((item) => item.status === 'ARCHIVED')),
   };
 
   const segmentedItems =

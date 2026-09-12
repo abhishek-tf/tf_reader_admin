@@ -231,7 +231,10 @@ h2 {
   color: var(--slate);
   text-align: center;
   cursor: pointer;
-  transition: border-color 120ms, background-color 120ms, color 120ms;
+  transition:
+    border-color 120ms,
+    background-color 120ms,
+    color 120ms;
 }
 .upload-dropzone:hover {
   border-color: var(--accent);
@@ -416,7 +419,9 @@ h2 {
   border: none;
   border-radius: var(--radius);
   cursor: pointer;
-  transition: background-color 120ms, color 120ms;
+  transition:
+    background-color 120ms,
+    color 120ms;
 }
 .menu-toggle:hover {
   background: var(--cornflower-neutral);
@@ -549,7 +554,9 @@ h2 {
   color: var(--vista);
   font-size: 14px;
   text-decoration: none;
-  transition: background-color 120ms, color 120ms;
+  transition:
+    background-color 120ms,
+    color 120ms;
 }
 .side a:hover {
   background: rgba(255, 255, 255, 0.1);
@@ -709,6 +716,20 @@ h2 {
     grid-template-columns: 1fr;
   }
 }
+/* Institutions' KPI row is three cards, not four — Stitch's own grid for that banner. */
+.kpi-grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+@media (max-width: 1024px) {
+  .kpi-grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .kpi-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
 .kpi-card {
   background: var(--panel);
   border: 1px solid var(--line);
@@ -787,6 +808,18 @@ h2 {
 }
 @media (max-width: 480px) {
   .field-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+/* Three fields side by side — the Shelves page's Feed Parameters card (Feed Title, Page Size,
+   Default Sort), Stitch's own layout for that row. */
+.field-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0 var(--space-md);
+}
+@media (max-width: 720px) {
+  .field-grid-3 {
     grid-template-columns: 1fr;
   }
 }
@@ -887,7 +920,9 @@ h2 {
   border-radius: var(--radius);
   cursor: pointer;
   text-decoration: none;
-  transition: background-color 120ms, color 120ms;
+  transition:
+    background-color 120ms,
+    color 120ms;
 }
 .btn:hover:not(:disabled) {
   background: var(--surface-container-low);
@@ -902,6 +937,19 @@ h2 {
   display: inline-block;
   padding: var(--space-xs) var(--space-md);
   border: 1px solid transparent;
+}
+/* The .btn-sm counterpart — same box model as .btn.btn-sm (padding, border width, weight,
+ * font-size), invisible, so a row whose second action is text instead of a button (a "This is
+ * you" that replaces Deactivate) still lines its first action up with every other row's,
+ * instead of the column shifting because "This is you" is a different width than "Deactivate". */
+.btn-placeholder-sm {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-2xs) var(--space-sm);
+  border: 1px solid transparent;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--slate);
 }
 .btn-primary {
   /* Same Indigo as the sidebar, not Ultramarine — a deliberate choice to keep the one
@@ -928,8 +976,13 @@ h2 {
   background: var(--cornflower-neutral);
   color: var(--accent);
 }
+/* Opaque, not transparent like .btn-ghost: this is always shown paired with a plain .btn
+   sibling (Deactivate next to Edit, Revoke next to Amend), and a transparent fill let a
+   tinted/hover row background show through it but not through its opaque neighbour - the two
+   read as different weights of button even with matching borders. Only color/border-color
+   change on hover, same as every other button variant. */
 .btn-danger-ghost {
-  background: transparent;
+  background: var(--panel);
   border-color: var(--line);
   color: var(--slate);
 }
@@ -1060,21 +1113,42 @@ h2 {
   flex-shrink: 0;
 }
 
-/* An icon-only row action — Stitch's action-cluster button, borderless until hovered. */
+/* An icon-only row action — Stitch's action-cluster button, borderless until hovered. Used on
+   both a real `<button>` (the tree toggle below) and a `<Link>` (row actions like Edit) —
+   `border`/`background`/`padding`/`font` are reset explicitly rather than left to inherit,
+   since a `<button>` has browser chrome for all four that an anchor never did; without this
+   the toggle rendered as a bordered, backgrounded box instead of a flat icon. */
 .btn-icon-ghost {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 28px;
   height: 28px;
+  padding: 0;
+  border: none;
   border-radius: var(--radius-sm);
+  background: none;
+  font: inherit;
   color: var(--slate);
   text-decoration: none;
-  transition: background-color 120ms, color 120ms;
+  cursor: pointer;
+  transition:
+    background-color 120ms,
+    color 120ms;
 }
 .btn-icon-ghost:hover {
   background: var(--surface-container-low);
   color: var(--accent);
+}
+
+/* The tree toggle is one chevron that rotates 90° open, not two different glyphs swapped in
+   and out — a single consistent shape animating reads cleaner than chevron_right/expand_more,
+   which are drawn at slightly different weights and don't share a rotation relationship. */
+.row-tree-toggle .material-symbols-outlined {
+  transition: transform 150ms ease;
+}
+.row-tree-toggle-open .material-symbols-outlined {
+  transform: rotate(90deg);
 }
 
 /* A short machine code shown as a neutral outlined chip rather than the coloured status
@@ -1088,6 +1162,58 @@ h2 {
   font-size: 11px;
   font-weight: 700;
   color: var(--carbon);
+}
+
+/* A monospaced value with no chip background — Stitch's treatment for an institution's email
+   domains and catalogue version cells, which read as plain data rather than a tag. */
+.code-chip-plain {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--slate);
+}
+
+/* An institution's type (University, Library, Corporate...) — Stitch's bordered, uppercase,
+   monospaced treatment, distinct from both the coloured status pill and the neutral code chip. */
+.type-chip {
+  display: inline-block;
+  padding: 2px var(--space-xs);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--slate);
+}
+
+/* A table entity's logo, when the record has one — same footprint as .table-entity-avatar so
+   the two are interchangeable in the same cell depending on whether a real logo is on file. */
+.table-entity-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--surface-white);
+  overflow: hidden;
+  padding: 2px;
+}
+.table-entity-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* A colour swatch preview next to a hex-code text field — Stitch's brand-colour picker. */
+.color-swatch {
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  flex-shrink: 0;
 }
 
 /* A table cell that navigates but should not read as a hyperlink — a publisher's name, a
@@ -1354,6 +1480,24 @@ h2 {
   background: var(--coral-dark);
 }
 
+/* Not a contract enum — a shelf has no `status` field of its own. Derived straight off the
+   same fact the contract itself calls out (Shelf schema: "An empty itemIds hides the shelf"),
+   so it is a real, always-correct read of the row, not an invented state. */
+.badge-VISIBLE {
+  background: var(--mint-subtle);
+  color: var(--mint-dark);
+}
+.badge-VISIBLE::before {
+  background: var(--mint-dark);
+}
+.badge-HIDDEN {
+  background: var(--surface-container-low);
+  color: var(--slate);
+}
+.badge-HIDDEN::before {
+  background: var(--slate);
+}
+
 /* A catalogue item's own status — DRAFT/PUBLISHED/ARCHIVED, a different enum from
    RecordStatus above but drawn from the same badge vocabulary. PUBLISHED reads the same as
    ACTIVE/READY (the "this is live" colour); DRAFT and ARCHIVED are both "not live", so both
@@ -1534,7 +1678,9 @@ h2 {
   display: flex;
   align-items: center;
   gap: var(--space-xs);
-  transition: color 120ms, border-color 120ms;
+  transition:
+    color 120ms,
+    border-color 120ms;
 }
 .tab:hover {
   color: var(--carbon);
@@ -1594,6 +1740,18 @@ h2 {
   border-bottom: 1px solid var(--line);
   flex-shrink: 0;
 }
+/* The <form> wrapping .modal-body/.modal-footer (every create/edit modal) needs to be a flex
+   child that can shrink, or it sizes to its content instead of the space .modal-card has left —
+   which left .modal-body's own overflow-y:auto with nothing bounded to scroll within, so a
+   form taller than the modal just got clipped by .modal-card's overflow:hidden instead of
+   scrolling. min-height: 0 overrides flex's default min-height: auto, which is what let the
+   form refuse to shrink below its content size in the first place. */
+.modal-card > form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
 .modal-title {
   margin: 0;
   font-family: var(--font-open-sans);
@@ -1614,7 +1772,9 @@ h2 {
   background: none;
   color: var(--slate);
   cursor: pointer;
-  transition: background-color 120ms, color 120ms;
+  transition:
+    background-color 120ms,
+    color 120ms;
 }
 .modal-close:hover {
   background: var(--surface-container-low);
@@ -1636,6 +1796,25 @@ h2 {
   justify-content: flex-end;
   gap: var(--space-sm);
   flex-shrink: 0;
+}
+
+/* A labelled group of fields inside a modal body — Stitch's "Institution Details" / "Access &
+   Identity" sections in the Add Institution modal, each with its own heading and a one-line
+   explanation above the fields. */
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+.form-section-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--carbon);
+}
+.form-section-divider {
+  height: 1px;
+  background: var(--line);
 }
 
 /* ── drawer: slide-over panel from the right ─────────────────────────────── */
@@ -1810,4 +1989,258 @@ h2 {
   cursor: pointer;
   color: inherit;
   padding: 0 2px;
+}
+
+/* ── shelves page ─────────────────────────────────────────────────────────── */
+/* The institution picker + catalogueVersion/optimistic-version chips strip above the shelf
+   cards — Stitch's "Institution Context & Optimistic Locking Bar". */
+.shelf-context-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+.shelf-context-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  font-size: 12px;
+  color: var(--slate);
+}
+.shelf-context-chip .material-symbols-outlined {
+  font-size: 16px;
+  color: var(--accent);
+}
+
+/* One shelf's card header: its fixed slot number, id, visible/hidden state, and inline title
+   field, all on one row — Stitch's own layout for shelf_1/shelf_2/shelf_3. */
+.shelf-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--line);
+  margin-bottom: var(--space-md);
+}
+.shelf-card-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+}
+.shelf-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+.shelf-card-title-row .input {
+  height: 34px;
+  max-width: 320px;
+  font-weight: 700;
+}
+
+/* One curated book row inside a shelf — cover, title, and the ISBN / publisher / entitlement
+   caption line Stitch shows underneath it, with icon actions instead of text buttons. */
+.shelf-book-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius);
+  background: var(--surface-page);
+}
+.shelf-book-row + .shelf-book-row {
+  margin-top: var(--space-2xs);
+}
+.shelf-book-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  font-size: 11px;
+  color: var(--slate);
+  flex-wrap: wrap;
+}
+
+/* The "Add entitled book" modal's dual-panel transfer workspace — an available-titles list on
+   the left, a shelf-contents list on the right, and one real transfer action between them.
+   Stitch's own layout for this, minus the parts that would be a fake affordance in this app
+   (a drag handle with no drag behind it, a second transfer button with no distinct multi-select
+   flow behind it — see ShelfContentsPanel/ShelfAvailablePanel for why). */
+.shelf-transfer-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: var(--space-sm);
+  align-items: stretch;
+  min-height: 420px;
+}
+@media (max-width: 720px) {
+  .shelf-transfer-grid {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+}
+.shelf-transfer-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-2xs);
+}
+.shelf-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--space-sm);
+  background: var(--surface-page);
+}
+.shelf-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+.shelf-panel-title {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--carbon);
+}
+.shelf-panel-count {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--slate);
+}
+.shelf-panel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  max-height: 380px;
+  flex: 1;
+}
+.shelf-available-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-2xs) var(--space-2xs);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.shelf-available-row:hover {
+  background: var(--surface-container-low);
+}
+.shelf-available-row input[type='checkbox'] {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+.format-filter-chips {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.format-filter-chip {
+  padding: 2px var(--space-xs);
+  font-size: 11px;
+  border: none;
+  background: none;
+  color: var(--slate);
+  cursor: pointer;
+}
+.format-filter-chip + .format-filter-chip {
+  border-left: 1px solid var(--line);
+}
+.format-filter-chip-active {
+  background: var(--surface-container-low);
+  color: var(--carbon);
+  font-weight: 700;
+}
+
+/* The Shelves page when a super admin has not picked an institution yet — one focused card
+   instead of two nearly-empty ones stacked on a mostly blank page. */
+.shelf-chooser-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-sm);
+  padding: var(--space-3xl) var(--space-xl);
+}
+.shelf-chooser-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-container);
+  background: var(--cornflower-neutral);
+  color: var(--accent);
+}
+.shelf-chooser-icon .material-symbols-outlined {
+  font-size: 28px;
+}
+.shelf-chooser-card .field {
+  width: 100%;
+  max-width: 360px;
+  margin-bottom: 0;
+  text-align: left;
+}
+
+/* ── entitlements page ────────────────────────────────────────────────────── */
+/* A selectable card option (the Grant Entitlement wizard's licence scope and concurrency
+   model choices) — Stitch's own radio-as-card treatment: a plain border at rest, filled
+   Ultramarine once picked, same as a real `<input type="radio">` just styled as the whole
+   card rather than the small circle alone. */
+.radio-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+  padding: var(--space-sm);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color 120ms;
+}
+.radio-card:hover {
+  border-color: var(--accent);
+}
+.radio-card-active {
+  border: 2px solid var(--accent);
+  background: var(--cornflower-neutral);
+}
+.radio-card input[type='radio'] {
+  accent-color: var(--accent);
+}
+
+/* ── operators & audit log page ──────────────────────────────────────────────── */
+/* An operator's role — Stitch's own mono, tinted-background treatment, distinct from both the
+   coloured status pill and the neutral code chip. */
+.role-chip {
+  display: inline-block;
+  padding: 2px var(--space-xs);
+  border-radius: var(--radius-sm);
+  background: var(--cornflower-neutral);
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+}
+.role-chip-muted {
+  background: var(--surface-container-low);
+  color: var(--slate);
 }

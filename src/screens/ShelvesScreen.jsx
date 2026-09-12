@@ -1,13 +1,19 @@
 import { useEffect, useState } from 'react';
-import TextField from '../ui/TextField.jsx';
-import SelectField from '../ui/SelectField.jsx';
 import FormActions from '../ui/FormActions.jsx';
 import ShelfFields from '../ui/ShelfFields.jsx';
+import PageHeader from '../ui/PageHeader.jsx';
+import Card from '../ui/Card.jsx';
+import Button from '../ui/Button.jsx';
+import { ShelvesDecoration } from '../ui/pageDecorations.jsx';
 import { useToast } from '../ui/ToastContext.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { getFeedSettings, setFeedSettings } from '../api/feedSettings.js';
 import { listInstitutions } from '../api/institution.js';
-import { SORT_OPTIONS, toFormState, validate, buildPayload } from '../ui/shelfFormFields.js';
+import { toFormState, validate, buildPayload } from '../ui/shelfFormFields.js';
+import { ShelfContextBar, FeedParametersCard } from './ShelfContextCards.jsx';
+import ShelfInstitutionChooser from '../ui/ShelfInstitutionChooser.jsx';
+
+const FORM_ID = 'shelves-form';
 
 /**
  * Curate one institution's three fixed shelves against the feed-settings backend.
@@ -105,65 +111,47 @@ export default function ShelvesScreen() {
   function renderBody() {
     if (!institutionId) {
       return (
-        <section className="card">
+        <Card>
           <p className="muted">Choose an institution above to curate its shelves.</p>
-        </section>
+        </Card>
       );
     }
     if (feed.loading) {
       return (
-        <section className="card">
+        <Card>
           <p className="muted">Loading...</p>
-        </section>
+        </Card>
       );
     }
     if (feed.error) {
       return (
-        <section className="card">
+        <Card>
           <p className="field-error">{feed.error.friendly}</p>
           {feed.error.traceId ? <p className="trace">Trace {feed.error.traceId}</p> : null}
           <button type="button" className="btn" onClick={() => loadFeedSettings(institutionId)}>
             Try again
           </button>
-        </section>
+        </Card>
       );
     }
     if (!feed.form) return null;
 
     return (
-      <form onSubmit={handleSubmit} noValidate>
-        <section className="card">
-          <h2>Feed</h2>
-          <TextField
-            label="Feed title"
-            name="feedTitle"
-            value={feed.form.feedTitle}
-            onChange={changeFeedField}
-            error={errors.feedTitle}
-            maxLength={80}
-            required
-            disabled={saving}
-          />
-          <TextField
-            label="Page size"
-            name="pageSize"
-            type="number"
-            value={feed.form.pageSize}
-            onChange={changeFeedField}
-            error={errors.pageSize}
-            required
-            disabled={saving}
-          />
-          <SelectField
-            label="Default sort"
-            name="defaultSort"
-            value={feed.form.defaultSort}
-            onChange={changeFeedField}
-            options={SORT_OPTIONS}
-            placeholder="Contract default"
-            disabled={saving}
-          />
-        </section>
+      <form id={FORM_ID} onSubmit={handleSubmit} noValidate className="stack">
+        <FeedParametersCard
+          feed={feed}
+          errors={errors}
+          changeFeedField={changeFeedField}
+          saving={saving}
+        />
+
+        <div className="detail-section-title">
+          <h2>Curated institutional shelves</h2>
+          <span className="muted small">
+            Exactly 3 fixed slots &middot; max 50 entitled books per shelf &middot; hidden when
+            empty
+          </span>
+        </div>
 
         {feed.form.shelves.map((shelf) => (
           <ShelfFields
@@ -177,35 +165,58 @@ export default function ShelvesScreen() {
           />
         ))}
 
-        <section className="card">
+        <Card>
           <FormActions
             onCancel={() => loadFeedSettings(institutionId)}
             saving={saving}
             saveLabel="Save shelves"
             cancelLabel="Discard changes"
           />
-        </section>
+        </Card>
       </form>
+    );
+  }
+
+  const header = (
+    <PageHeader
+      title="Feed settings & shelves"
+      subtitle="Configure reader feed parameters and curate the 3 fixed institutional shelves."
+      decoration={<ShelvesDecoration />}
+      actions={
+        institutionId && feed.form ? (
+          <Button type="submit" form={FORM_ID} variant="primary" icon="save" disabled={saving}>
+            {saving ? 'Saving...' : 'Save feed settings'}
+          </Button>
+        ) : null
+      }
+    />
+  );
+
+  // A super admin who has not picked an institution yet gets one focused chooser card, not
+  // the context bar (nothing to show yet: no catalogueVersion, no optimistic version) sitting
+  // above a second, equally empty "choose one above" card.
+  if (!isInstitutionAdmin && !institutionId) {
+    return (
+      <div className="stack">
+        {header}
+        <ShelfInstitutionChooser
+          institutionPicker={institutionPicker}
+          setInstitutionPicker={setInstitutionPicker}
+        />
+      </div>
     );
   }
 
   return (
     <div className="stack">
-      <section className="card">
-        <h1>Shelves</h1>
-        <p className="muted">Curate the three shelves an institution&apos;s readers see first.</p>
-        {!isInstitutionAdmin ? (
-          <SelectField
-            label="Institution"
-            name="institutionId"
-            value={institutionPicker.selectedId}
-            onChange={(_name, value) => setInstitutionPicker((c) => ({ ...c, selectedId: value }))}
-            options={institutionPicker.list.map((inst) => ({ value: inst.id, label: inst.name }))}
-            placeholder="Choose an institution"
-            disabled={institutionPicker.loading}
-          />
-        ) : null}
-      </section>
+      {header}
+
+      <ShelfContextBar
+        isInstitutionAdmin={isInstitutionAdmin}
+        institutionPicker={institutionPicker}
+        setInstitutionPicker={setInstitutionPicker}
+        feed={feed}
+      />
 
       {renderBody()}
     </div>

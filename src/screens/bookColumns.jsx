@@ -29,91 +29,98 @@ function isEncrypted(row) {
  */
 export function getColumns(onToggleExpand) {
   return [
-  {
-    key: 'title',
-    label: 'Title & authors',
-    render: (row) => (
-      <div className="table-entity" style={{ paddingLeft: row.depth ? row.depth * 20 : 0 }}>
-        {row.hasChildren ? (
-          <button
-            type="button"
-            className="btn-icon-ghost row-tree-toggle"
-            onClick={() => onToggleExpand(row.id)}
-            aria-label={row.isExpanded ? `Collapse ${row.title}` : `Expand ${row.title}`}
-            aria-expanded={row.isExpanded}
-          >
-            <Icon name={row.isExpanded ? 'expand_more' : 'chevron_right'} />
-          </button>
-        ) : row.depth ? (
-          <span className="row-tree-spacer" aria-hidden="true" />
-        ) : null}
-        <CoverThumb
-          id={row.id}
-          coverUrl={row.coverUrl}
-          contentType={row.contentType}
-          updatedAt={row.updatedAt}
-        />
-        <div className="table-entity-text">
-          <Link to={`/books/${row.id}/edit`} className="row-link row-link-emphasis">
-            {row.title}
-          </Link>
-          {row.authors?.length ? (
-            <span className="table-entity-sub">{row.authors.join(', ')}</span>
+    {
+      key: 'title',
+      label: 'Title & authors',
+      render: (row) => (
+        <div className="table-entity" style={{ paddingLeft: row.depth ? row.depth * 20 : 0 }}>
+          {row.hasChildren ? (
+            <button
+              type="button"
+              className={`btn-icon-ghost row-tree-toggle${row.isExpanded ? ' row-tree-toggle-open' : ''}`}
+              onClick={() => onToggleExpand(row.id)}
+              aria-label={row.isExpanded ? `Collapse ${row.title}` : `Expand ${row.title}`}
+              aria-expanded={row.isExpanded}
+            >
+              <Icon name="chevron_right" />
+            </button>
+          ) : row.depth ? (
+            <span className="row-tree-spacer" aria-hidden="true" />
           ) : null}
+          <CoverThumb
+            id={row.id}
+            coverUrl={row.coverUrl}
+            contentType={row.contentType}
+            updatedAt={row.updatedAt}
+          />
+          <div className="table-entity-text">
+            <Link to={`/books/${row.id}/edit`} className="row-link row-link-emphasis">
+              {row.title}
+            </Link>
+            {row.authors?.length ? (
+              <span className="table-entity-sub">{row.authors.join(', ')}</span>
+            ) : null}
+          </div>
         </div>
-      </div>
-    ),
-  },
-  {
-    key: 'isbn',
-    label: 'ISBN',
-    render: (row) => (row.isbn ? <span className="code-chip">{row.isbn}</span> : '—'),
-  },
-  {
-    key: 'publisherName',
-    label: 'Publisher',
-    render: (row) => row.publisherName ?? row.publisherId,
-  },
-  {
-    key: 'contentType',
-    label: 'Format',
-    render: (row) => (
-      <span className="format-chip">
-        {row.contentType}
-        {isEncrypted(row) ? <Icon name="lock" style={{ fontSize: 13 }} /> : null}
-      </span>
-    ),
-  },
-  {
-    key: 'accessTier',
-    label: 'Access tier',
-    render: (row) => <span className={`badge badge-${row.accessTier}`}>{TIER_LABEL[row.accessTier]}</span>,
-  },
-  {
-    key: 'status',
-    label: 'Status',
-    render: (row) => <StatusBadge status={row.status} />,
-  },
-  {
-    key: 'contentState',
-    label: 'Content state',
-    render: (row) => (
-      <>
-        <IngestStateBadge state={row.contentState} />
-        {row.contentState === 'FAILED' && row.contentError ? (
-          <p className="content-error">{row.contentError}</p>
-        ) : null}
-      </>
-    ),
-  },
-  {
-    key: 'actions',
-    label: '',
-    render: (row) => (
-      <Link className="btn-icon-ghost" to={`/books/${row.id}/edit`} aria-label={`Edit ${row.title}`} title="Edit">
-        <Icon name="edit" />
-      </Link>
-    ),
-  },
+      ),
+    },
+    {
+      key: 'isbn',
+      label: 'ISBN',
+      render: (row) => (row.isbn ? <span className="code-chip">{row.isbn}</span> : '—'),
+    },
+    {
+      key: 'publisherName',
+      label: 'Publisher',
+      render: (row) => row.publisherName ?? row.publisherId,
+    },
+    {
+      key: 'contentType',
+      label: 'Format',
+      render: (row) => (
+        <span className="format-chip">
+          {row.contentType}
+          {isEncrypted(row) ? <Icon name="lock" style={{ fontSize: 13 }} /> : null}
+        </span>
+      ),
+    },
+    {
+      key: 'accessTier',
+      label: 'Access tier',
+      render: (row) => (
+        <span className={`badge badge-${row.accessTier}`}>{TIER_LABEL[row.accessTier]}</span>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (row) => <StatusBadge status={row.status} />,
+    },
+    {
+      key: 'contentState',
+      label: 'Content state',
+      render: (row) => (
+        <>
+          <IngestStateBadge state={row.contentState} />
+          {row.contentState === 'FAILED' && row.contentError ? (
+            <p className="content-error">{row.contentError}</p>
+          ) : null}
+        </>
+      ),
+    },
+    {
+      key: 'actions',
+      label: '',
+      render: (row) => (
+        <Link
+          className="btn-icon-ghost"
+          to={`/books/${row.id}/edit`}
+          aria-label={`Edit ${row.title}`}
+          title="Edit"
+        >
+          <Icon name="edit" />
+        </Link>
+      ),
+    },
   ];
 }

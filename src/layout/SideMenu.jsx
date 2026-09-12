@@ -21,7 +21,12 @@ export const ENTRIES = [
     icon: 'menu_book',
     roles: ['SUPER_ADMIN', 'PUBLISHER_ADMIN'],
   },
-  { to: '/books', label: 'Books', icon: 'auto_stories', roles: ['SUPER_ADMIN', 'PUBLISHER_ADMIN'] },
+  {
+    to: '/books',
+    label: 'Catalogue items',
+    icon: 'auto_stories',
+    roles: ['SUPER_ADMIN', 'PUBLISHER_ADMIN'],
+  },
   {
     to: '/institutions',
     label: 'Institutions',
@@ -40,8 +45,7 @@ export const ENTRIES = [
     icon: 'verified_user',
     roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN'],
   },
-  { to: '/operators', label: 'Operators', icon: 'admin_panel_settings', roles: ['SUPER_ADMIN'] },
-  { to: '/audit', label: 'Audit log', icon: 'history', roles: ['SUPER_ADMIN'] },
+  { to: '/operators', label: 'Operators & Audit Log', icon: 'badge', roles: ['SUPER_ADMIN'] },
 ];
 
 // Where "/" sends a role the moment it signs in, and where NotAuthorized's "Go to Home" sends

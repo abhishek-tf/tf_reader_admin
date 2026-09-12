@@ -13,6 +13,10 @@ const LABEL = {
   DRAFT: 'Draft',
   PUBLISHED: 'Published',
   ARCHIVED: 'Archived',
+  // Not contract enums — a shelf has no `status` field. Derived from the one fact the
+  // contract itself calls out (Shelf: "An empty itemIds hides the shelf"), for the Shelves page.
+  VISIBLE: 'Visible',
+  HIDDEN: 'Hidden',
 };
 
 export default function StatusBadge({ status }) {

@@ -1,15 +1,19 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 
-import DataTable from '../ui/DataTable';
-import FilterBar from '../ui/FilterBar';
-import Pagination from '../ui/Pagination';
-import StatusBadge from '../ui/StatusBadge';
-import TextField from '../ui/TextField';
-import { useToast } from '../ui/ToastContext';
-import InstitutionSummaryPanel from '../screens/InstitutionSummaryPanel';
-import { useInstitutions } from '../screens/useInstitutions';
-import { getInstitution, setInstitutionStatus } from '../api/institution';
+import DataTable from '../ui/DataTable.jsx';
+import FilterBar from '../ui/FilterBar.jsx';
+import Pagination from '../ui/Pagination.jsx';
+import PageHeader from '../ui/PageHeader.jsx';
+import KpiCard from '../ui/KpiCard.jsx';
+import Button from '../ui/Button.jsx';
+import RouteErrorBoundary from '../ui/RouteErrorBoundary.jsx';
+import { InstitutionsDecoration } from '../ui/pageDecorations.jsx';
+import InstitutionStatusModal from './InstitutionStatusModal.jsx';
+import { useInstitutions } from './useInstitutions.js';
+import { buildInstitutionColumns } from './institutionColumns.jsx';
+import { useToast } from '../ui/ToastContext.jsx';
+import { setInstitutionStatus } from '../api/institution.js';
 
 const STATUS_OPTIONS = [
   { value: 'ACTIVE', label: 'Active' },
@@ -17,26 +21,74 @@ const STATUS_OPTIONS = [
   { value: 'RETIRED', label: 'Retired' },
 ];
 
-/** The institutions page: a filterable list and a detail panel. Create and edit are pages. */
+function KpiRow({ kpis }) {
+  const activePercent = kpis ? Math.round((kpis.active / Math.max(kpis.total, 1)) * 100) : null;
+  return (
+    <div className="kpi-grid kpi-grid-3">
+      <KpiCard
+        label="Total Institutions"
+        value={kpis?.total ?? '—'}
+        icon="account_balance"
+        helper="institutions registered"
+      />
+      <KpiCard
+        label="Active Institutions"
+        value={kpis?.active ?? '—'}
+        icon="check_circle"
+        accent
+        helper={activePercent === null ? undefined : `${activePercent}% active`}
+      />
+      <KpiCard
+        label="Suspended / Retired"
+        value={kpis ? kpis.suspended + kpis.retired : '—'}
+        icon="pause_circle"
+        helper={kpis ? `${kpis.suspended} suspended · ${kpis.retired} retired` : undefined}
+      />
+    </div>
+  );
+}
+
+function InstitutionFilters({ list }) {
+  return (
+    <FilterBar
+      searchValue={list.q}
+      onSearchChange={list.setQ}
+      searchPlaceholder="Search by institution name..."
+      filters={[
+        {
+          name: 'status',
+          label: 'Status',
+          value: list.status,
+          options: STATUS_OPTIONS,
+          placeholder: 'Status: All',
+          onChange: list.setStatus,
+        },
+      ]}
+      trailing={
+        <button type="button" className="btn-reset-link" onClick={list.clear}>
+          Reset
+        </button>
+      }
+    />
+  );
+}
+
+/** The institutions page: a filterable list. Create and edit are pages, rendered through this
+ * screen's own `<Outlet/>` as a modal overlaying this list — see App.jsx's nested
+ * `/institutions` routes and the same pattern already used by Publishers/Books. Clicking an
+ * institution's name goes to its own detail page (`/institutions/:id`), where its entitlements
+ * and the books under them live — not an inline card at the bottom of this list. */
 export default function InstitutionsScreen() {
   const list = useInstitutions();
   const toast = useToast();
-  const [selected, setSelected] = useState(null);
+  const location = useLocation();
   const [pendingStatusIds, setPendingStatusIds] = useState(() => new Set());
-  // The row a Suspend/Reactivate click is waiting to be confirmed for, plus the reason text typed
-  // so far. Not a window.prompt: a native browser prompt is silently blocked (returns null with
-  // no dialog shown at all) in several embedded/preview browsers and webviews, which makes the
-  // button look like it does nothing. An on-page confirmation has no such failure mode.
+  // The row a Suspend/Reactivate click is waiting to be confirmed for, plus the reason text
+  // typed so far. Not a window.prompt: a native browser prompt is silently blocked (returns
+  // null with no dialog shown at all) in several embedded/preview browsers and webviews, which
+  // makes the button look like it does nothing. An on-page confirmation has no such failure
+  // mode.
   const [statusConfirm, setStatusConfirm] = useState(null); // { institution, nextStatus, reason }
-
-  async function selectRow(row) {
-    try {
-      setSelected(await getInstitution(row.id));
-    } catch (e) {
-      toast.failed(e);
-      setSelected(row);
-    }
-  }
 
   function startStatusChange(institution) {
     if (pendingStatusIds.has(institution.id)) return; // already in flight for this row
@@ -55,7 +107,6 @@ export default function InstitutionsScreen() {
         reason: reason.trim() || undefined,
       });
       list.patchRow(updated.id, updated);
-      if (selected?.id === updated.id) setSelected(updated);
       toast.saved();
     } catch (e) {
       toast.failed(e);
@@ -68,118 +119,72 @@ export default function InstitutionsScreen() {
     }
   }
 
-  const columns = [
-    { key: 'code', label: 'Code' },
-    { key: 'name', label: 'Name' },
-    { key: 'type', label: 'Type' },
-    { key: 'country', label: 'Country' },
-    { key: 'status', label: 'Status', render: (row) => <StatusBadge status={row.status} /> },
-    { key: 'catalogueVersion', label: 'Version' },
-    {
-      key: '_actions',
-      label: '',
-      render: (row) => (
-        <div className="row-buttons" style={{ marginBottom: 0 }}>
-          <button type="button" className="btn" onClick={() => selectRow(row)}>
-            View
-          </button>
-          <button
-            type="button"
-            className="btn"
-            disabled={pendingStatusIds.has(row.id)}
-            onClick={() => startStatusChange(row)}
-          >
-            {pendingStatusIds.has(row.id)
-              ? 'Saving...'
-              : row.status === 'ACTIVE'
-                ? 'Suspend'
-                : 'Reactivate'}
-          </button>
-        </div>
-      ),
-    },
-  ];
+  const columns = buildInstitutionColumns({
+    onToggleStatus: startStatusChange,
+    pendingIds: pendingStatusIds,
+  });
 
   return (
-    <div className="stack institutions-screen">
-      <section className="card">
-        <div className="row-buttons" style={{ justifyContent: 'space-between' }}>
-          <h1>Institutions</h1>
-          <Link className="btn btn-primary" to="/institutions/new">
-            New institution
-          </Link>
-        </div>
+    <div className="stack">
+      <PageHeader
+        title="Institutions"
+        subtitle="Manage licensed academic institutions, universities, medical libraries, and consortia access."
+        decoration={<InstitutionsDecoration />}
+        actions={
+          <Button as={Link} variant="primary" icon="add" to="/institutions/new">
+            Create institution
+          </Button>
+        }
+      />
 
-        {/* FilterBar, not a bare input beside a SelectField: SelectField brings a label and a
-            .field wrapper while the search box had neither, which left the two on different
-            baselines and stretched the box to the taller one's height. Books uses the same
-            control, so the two list screens now filter the same way. */}
-        <FilterBar
-          searchValue={list.q}
-          onSearchChange={list.setQ}
-          searchPlaceholder="Search by name"
-          filters={[
-            {
-              name: 'status',
-              label: 'Status',
-              value: list.status,
-              options: STATUS_OPTIONS,
-              placeholder: 'All statuses',
-              onChange: list.setStatus,
-            },
-          ]}
+      <KpiRow kpis={list.kpis} />
+
+      <InstitutionFilters list={list} />
+
+      <DataTable
+        columns={columns}
+        rows={list.items}
+        loading={list.loading}
+        error={list.error}
+        emptyMessage="No institutions match this filter."
+        onRetry={list.reload}
+        header={
+          !list.loading && !list.error ? (
+            <span>
+              {list.total} institution{list.total === 1 ? '' : 's'} listed
+            </span>
+          ) : null
+        }
+      />
+
+      {!list.error && list.total > 0 ? (
+        <Pagination
+          page={list.page}
+          size={list.size}
+          total={list.total}
+          onPageChange={list.setPage}
+          pageSize={list.pageSize}
+          onPageSizeChange={list.changePageSize}
+          pageSizeOptions={[10, 25, 50, 100]}
         />
+      ) : null}
 
-        <DataTable
-          columns={columns}
-          rows={list.items}
-          loading={list.loading}
-          error={list.error}
-          emptyMessage="No institutions match this filter."
-          onRetry={list.reload}
-        />
+      <InstitutionStatusModal
+        statusConfirm={statusConfirm}
+        onChangeReason={(reason) => setStatusConfirm((c) => ({ ...c, reason }))}
+        onConfirm={confirmStatusChange}
+        onCancel={() => setStatusConfirm(null)}
+      />
 
-        {!list.loading && !list.error && (
-          <Pagination
-            page={list.page}
-            size={list.size}
-            total={list.total}
-            onPageChange={list.setPage}
-          />
-        )}
-      </section>
-
-      {statusConfirm && (
-        <section className="card">
-          <h2>
-            Change {statusConfirm.institution.name} to{' '}
-            {statusConfirm.nextStatus === 'ACTIVE' ? 'Active' : 'Suspended'}?
-          </h2>
-          <TextField
-            label="Reason (optional)"
-            name="reason"
-            value={statusConfirm.reason}
-            onChange={(_name, value) => setStatusConfirm((c) => ({ ...c, reason: value }))}
-          />
-          <div className="form-actions">
-            <button type="button" className="btn btn-primary" onClick={confirmStatusChange}>
-              Confirm
-            </button>
-            <button type="button" className="btn" onClick={() => setStatusConfirm(null)}>
-              Cancel
-            </button>
-          </div>
-        </section>
-      )}
-
-      {selected && (
-        <section className="card">
-          <InstitutionSummaryPanel institution={selected} />
-          <Link className="btn" to={`/institutions/${selected.id}/edit`}>
-            Edit
-          </Link>
-        </section>
-      )}
+      {/* Filled by the /institutions/new and /institutions/:institutionId/edit child routes —
+          InstitutionForm's own fixed-position modal overlay, rendered here so this table stays
+          mounted and visible (blurred) behind it, matching Stitch's "Add Institution" modal.
+          `context` hands it this list's own reload, same reasoning as Publishers/Books: since
+          this table now stays mounted across a create/edit instead of remounting on the way
+          back to /institutions, something has to trigger that refetch explicitly. */}
+      <RouteErrorBoundary resetKey={location.pathname} fallbackTo="/institutions">
+        <Outlet context={{ reload: list.reload }} />
+      </RouteErrorBoundary>
     </div>
   );
 }

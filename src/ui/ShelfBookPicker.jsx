@@ -1,19 +1,25 @@
-import ShelfBookSearch from './ShelfBookSearch.jsx';
+import { useState } from 'react';
+import Button from './Button.jsx';
+import ShelfBookPickerModal from './ShelfBookPickerModal.jsx';
 import ShelfPickedBooks from './ShelfPickedBooks.jsx';
 
 const MAX_ITEMS = 50;
 
 /**
- * Search the catalogue and build a shelf's ordered item list by picking books, instead of
- * typing ids by hand. Split into a search half (ShelfBookSearch) and a picked-list half
- * (ShelfPickedBooks), since together they were over the line budget - this component just
- * owns the one itemIds array both halves mutate.
+ * Builds a shelf's ordered item list by picking books through a modal search, instead of
+ * typing ids by hand. Split into the modal (ShelfBookPickerModal, a dual-panel transfer
+ * workspace) and the page's own picked-list half (ShelfPickedBooks), since together they were
+ * over the line budget — this component just owns the one itemIds array both mutate, plus
+ * whether the modal is open.
  */
-export default function ShelfBookPicker({ institutionId, itemIds, onChange, disabled }) {
-  function add(itemId) {
-    if (itemIds.includes(itemId) || itemIds.length >= MAX_ITEMS) return;
-    onChange([...itemIds, itemId]);
-  }
+export default function ShelfBookPicker({
+  institutionId,
+  shelfTitle,
+  itemIds,
+  onChange,
+  disabled,
+}) {
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   function remove(itemId) {
     onChange(itemIds.filter((id) => id !== itemId));
@@ -29,19 +35,34 @@ export default function ShelfBookPicker({ institutionId, itemIds, onChange, disa
 
   return (
     <div className="stack">
-      <ShelfBookSearch
-        institutionId={institutionId}
-        itemIds={itemIds}
-        maxItems={MAX_ITEMS}
-        onAdd={add}
-        disabled={disabled}
-      />
+      <div className="shelf-card-title-row" style={{ justifyContent: 'flex-end' }}>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          icon="add"
+          disabled={disabled || itemIds.length >= MAX_ITEMS}
+          onClick={() => setPickerOpen(true)}
+        >
+          Add entitled book
+        </Button>
+      </div>
       <ShelfPickedBooks
         institutionId={institutionId}
         itemIds={itemIds}
         maxItems={MAX_ITEMS}
         onRemove={remove}
         onMove={move}
+        disabled={disabled}
+      />
+      <ShelfBookPickerModal
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        shelfTitle={shelfTitle}
+        institutionId={institutionId}
+        itemIds={itemIds}
+        onChange={onChange}
+        maxItems={MAX_ITEMS}
         disabled={disabled}
       />
     </div>
