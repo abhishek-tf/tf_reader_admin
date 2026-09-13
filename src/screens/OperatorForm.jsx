@@ -6,6 +6,7 @@ import SelectField from '../ui/SelectField.jsx';
 import FormActions from '../ui/FormActions.jsx';
 import Icon from '../ui/Icon.jsx';
 import { MIN_PASSWORD, toFormState, validate, toPayload } from './operatorFormFields.js';
+import { useOperatorScopeOptions } from './useOperatorScopeOptions.js';
 
 // The same wording Header.jsx shows for a role. SUPER_ADMIN is not a phrase to show an
 // operator, but it is exactly what the value has to be, which is what SelectField separates.
@@ -14,6 +15,15 @@ const ROLE_OPTIONS = [
   { value: 'PUBLISHER_ADMIN', label: 'Publisher admin' },
   { value: 'INSTITUTION_ADMIN', label: 'Institution admin' },
 ];
+
+// One placeholder rule for both scope dropdowns, rather than the same loading/error/empty
+// ternary written out twice - `kind` is just the word to drop into each sentence.
+function scopePlaceholder(kind, scopeOptions) {
+  if (scopeOptions.loading) return `Loading ${kind}s...`;
+  if (scopeOptions.error) return 'Could not load the list — try again';
+  if (scopeOptions.options.length === 0) return `No ${kind}s exist yet`;
+  return `Choose a${kind === 'institution' ? 'n' : ''} ${kind}`;
+}
 
 /**
  * Create and edit form for one console operator, as Stitch's own centred modal (its "Add
@@ -38,6 +48,7 @@ export default function OperatorForm({ initial = null, onSubmit, onCancel }) {
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const scopeOptions = useOperatorScopeOptions(form.role);
 
   useEffect(() => () => reloadList?.(), [reloadList]);
 
@@ -177,29 +188,31 @@ export default function OperatorForm({ initial = null, onSubmit, onCancel }) {
             />
 
             {form.role === 'PUBLISHER_ADMIN' ? (
-              <TextField
-                label="Scope publisher ID"
+              <SelectField
+                label="Scope publisher"
                 name="scopePublisherId"
                 value={form.scopePublisherId}
                 onChange={change}
+                options={scopeOptions.options}
                 error={errors.scopePublisherId}
-                placeholder="pub_rtlg"
+                placeholder={scopePlaceholder('publisher', scopeOptions)}
                 hint="The one publisher this operator may manage."
-                disabled={saving}
+                disabled={saving || scopeOptions.loading || scopeOptions.options.length === 0}
                 required
               />
             ) : null}
 
             {form.role === 'INSTITUTION_ADMIN' ? (
-              <TextField
-                label="Scope institution ID"
+              <SelectField
+                label="Scope institution"
                 name="scopeInstitutionId"
                 value={form.scopeInstitutionId}
                 onChange={change}
+                options={scopeOptions.options}
                 error={errors.scopeInstitutionId}
-                placeholder="inst_7f3"
+                placeholder={scopePlaceholder('institution', scopeOptions)}
                 hint="The one institution this operator may manage."
-                disabled={saving}
+                disabled={saving || scopeOptions.loading || scopeOptions.options.length === 0}
                 required
               />
             ) : null}

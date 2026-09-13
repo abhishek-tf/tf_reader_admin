@@ -137,10 +137,10 @@ export default function InstitutionDetailScreen() {
           <h2>Books under these entitlements</h2>
         </div>
         <DataTable
-          columns={getColumns(() => {})}
+          columns={getColumns(entitlements.toggleExpand)}
           rows={entitlements.books}
           loading={entitlements.loadingEntitlements || entitlements.loadingBooks}
-          error={entitlements.entitlementsError}
+          error={entitlements.booksError}
           emptyMessage="No books are reachable through this institution's entitlements yet."
           onRetry={entitlements.reload}
         />

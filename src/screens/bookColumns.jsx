@@ -77,19 +77,29 @@ export function getColumns(onToggleExpand) {
     {
       key: 'contentType',
       label: 'Format',
-      render: (row) => (
-        <span className="format-chip">
-          {row.contentType}
-          {isEncrypted(row) ? <Icon name="lock" style={{ fontSize: 13 }} /> : null}
-        </span>
-      ),
+      // A container (JOURNAL/VOLUME/ISSUE) has no contentType of its own - only a leaf
+      // (BOOK/ARTICLE) does - so there is no format chip or lock icon to show for one.
+      render: (row) =>
+        row.contentType ? (
+          <span className="format-chip">
+            {row.contentType}
+            {isEncrypted(row) ? <Icon name="lock" style={{ fontSize: 13 }} /> : null}
+          </span>
+        ) : (
+          '—'
+        ),
     },
     {
       key: 'accessTier',
       label: 'Access tier',
-      render: (row) => (
-        <span className={`badge badge-${row.accessTier}`}>{TIER_LABEL[row.accessTier]}</span>
-      ),
+      // Same reasoning: a container's accessTier is always null, never inherited from a
+      // parent or rolled up from its children, so there is no tier badge to render.
+      render: (row) =>
+        row.accessTier ? (
+          <span className={`badge badge-${row.accessTier}`}>{TIER_LABEL[row.accessTier]}</span>
+        ) : (
+          '—'
+        ),
     },
     {
       key: 'status',
