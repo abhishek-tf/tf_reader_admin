@@ -201,9 +201,15 @@ export default function PublisherForm({ publisher = null, onSaved, onCancel }) {
                   disabled={saving}
                 />
               </div>
-              <span className="table-entity-avatar" aria-hidden="true" style={{ marginTop: 28 }}>
-                {previewInitials}
-              </span>
+              {previewInitials ? (
+                <span
+                  className="table-entity-avatar"
+                  aria-hidden="true"
+                  style={{ marginTop: 28 }}
+                >
+                  {previewInitials}
+                </span>
+              ) : null}
             </div>
             <p className="muted small">
               Suspending or delisting a publisher immediately pauses catalogue distribution across
