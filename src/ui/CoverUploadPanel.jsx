@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Icon from './Icon.jsx';
 import { uploadCatalogueItemCover } from '../api/catalogueItems.js';
 import { useToast } from './ToastContext.jsx';
+import { getCachedCoverSrc, peekCachedCoverSrc } from './coverImageCache.js';
 
 const FILE_ID = 'cover-file';
 const HINT_ID = `${FILE_ID}-hint`;
@@ -36,6 +37,35 @@ export default function CoverUploadPanel({ item }) {
   // Computed during render rather than copied into state: the record stays the source of
   // truth until an upload actually returns something newer.
   const current = uploaded ?? item;
+
+  // Same reasoning as CoverThumb.jsx: current.coverUrl is a freshly re-presigned S3/B2 link on
+  // every load of this screen, so it can't be trusted as a cache key - id + updatedAt can, and
+  // coverImageCache.js already keys on exactly that. peekCachedCoverSrc as the lazy initial
+  // state paints a cover already seen elsewhere in the app instantly, with no network request
+  // and no spinner flash; getCachedCoverSrc handles the miss (including right after a fresh
+  // upload, whose new updatedAt naturally busts the old cache entry).
+  const [resolvedSrc, setResolvedSrc] = useState(() =>
+    current.coverUrl ? peekCachedCoverSrc(current.id, current.updatedAt) : null
+  );
+
+  useEffect(() => {
+    if (!current.coverUrl) {
+      setResolvedSrc(null);
+      return undefined;
+    }
+    const cached = peekCachedCoverSrc(current.id, current.updatedAt);
+    if (cached) {
+      setResolvedSrc(cached);
+      return undefined;
+    }
+    let cancelled = false;
+    getCachedCoverSrc(current.id, current.coverUrl, current.updatedAt).then((src) => {
+      if (!cancelled) setResolvedSrc(src);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [current.id, current.coverUrl, current.updatedAt]);
 
   async function handleFileChange(event) {
     const chosen = event.target.files?.[0] ?? null;
@@ -78,11 +108,7 @@ export default function CoverUploadPanel({ item }) {
   return (
     <div className="cover-upload-card">
       <div className="cover-upload-thumb">
-        {current.coverUrl ? (
-          <img src={current.coverUrl} alt="Cover preview" />
-        ) : (
-          <Icon name="image" />
-        )}
+        {resolvedSrc ? <img src={resolvedSrc} alt="Cover preview" /> : <Icon name="image" />}
       </div>
       <div className="cover-upload-body">
         <span className="cover-upload-title">Upload cover image</span>
