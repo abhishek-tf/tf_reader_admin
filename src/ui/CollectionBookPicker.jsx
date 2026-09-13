@@ -15,8 +15,11 @@ import { fetchAllPages } from '../api/client.js';
  *
  * PUT /collections/{id}/items is a full replace, not an add/remove delta, so Save sends the
  * whole list built here, the same shape ShelvesScreen already uses for a shelf's itemIds.
+ *
+ * `publisherId` is passed straight through to CollectionBookSearch, so the add-a-book search
+ * only ever offers books from the collection's own publisher.
  */
-export default function CollectionBookPicker({ collectionId }) {
+export default function CollectionBookPicker({ collectionId, publisherId }) {
   const toast = useToast();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -78,6 +81,7 @@ export default function CollectionBookPicker({ collectionId }) {
   return (
     <form className="stack" onSubmit={handleSubmit}>
       <CollectionBookSearch
+        publisherId={publisherId}
         pickedIds={items.map((item) => item.id)}
         onAdd={add}
         disabled={saving}

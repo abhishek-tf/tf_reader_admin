@@ -57,6 +57,7 @@ export default function TextField({
   hint,
   required = false,
   endAdornment,
+  compact = false,
 }) {
   const id = `field-${name}`;
   const errorId = `${id}-error`;
@@ -78,7 +79,7 @@ export default function TextField({
 
   return (
     <div className="field">
-      <FieldLabel id={id} label={label} required={required} />
+      <FieldLabel id={id} label={label} required={required} compact={compact} />
       <FieldControl
         multiline={multiline}
         rows={rows}

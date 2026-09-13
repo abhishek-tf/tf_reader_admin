@@ -17,13 +17,14 @@ export default function SelectField({
   placeholder = 'Choose one',
   disabled = false,
   required = false,
+  compact = false,
 }) {
   const id = `field-${name}`;
   const errorId = `${id}-error`;
 
   return (
     <div className="field">
-      <FieldLabel id={id} label={label} required={required} />
+      <FieldLabel id={id} label={label} required={required} compact={compact} />
       <select
         id={id}
         name={name}

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import FieldLabel from './FieldLabel.jsx';
+import Icon from './Icon.jsx';
 import IngestStateBadge from './IngestStateBadge.jsx';
 import { getIngestStatus, uploadCatalogueItemContent } from '../api/catalogueItems.js';
 import { useToast } from './ToastContext.jsx';
@@ -31,6 +31,23 @@ const EXPECTED_EXTENSIONS = {
 };
 
 const FORMAT_MISMATCH = 'File format does not match content type.';
+
+/**
+ * The two courtesy checks a chosen file has to pass before it's worth sending — an
+ * unrecognised contentType is left to the server rather than guessed at here. Returns the
+ * message to toast, or null when the file is fine to upload.
+ */
+function rejectionFor(chosen, item) {
+  const expected = EXPECTED_EXTENSIONS[item.contentType];
+  if (expected && !expected.some((ext) => chosen.name.toLowerCase().endsWith(ext))) {
+    return FORMAT_MISMATCH;
+  }
+  const maxBytes = LOCKED_TIERS.includes(item.accessTier) ? LOCKED_MAX_BYTES : GENERAL_MAX_BYTES;
+  if (chosen.size > maxBytes) {
+    return `File exceeds the ${maxBytes / 1024 / 1024} MB upload limit.`;
+  }
+  return null;
+}
 
 // The caps IngestService enforces. Checked here only so a file that cannot possibly be accepted
 // fails in the browser rather than after the whole thing has crossed the wire — the server still
@@ -64,7 +81,6 @@ const LOCKED_TIERS = ['SUBSCRIPTION', 'ELITE'];
  */
 export default function ContentUploadPanel({ item }) {
   const toast = useToast();
-  const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
   const [uploaded, setUploaded] = useState(null);
@@ -154,40 +170,24 @@ export default function ContentUploadPanel({ item }) {
   // produce a failure.
   const format = item.contentType;
 
-  function handleFileChange(event) {
+  // Picking a file uploads it immediately — there is no separate Upload button to click,
+  // since the only thing an operator could do between picking and uploading is pick a
+  // different file, which choosing again already covers.
+  async function handleFileChange(event) {
     const chosen = event.target.files?.[0] ?? null;
     setError(null);
+    // Clearing the input means picking the *same* file again still fires a change event,
+    // which it would not if the element kept holding it — true whether this upload succeeds,
+    // fails, or never starts because of a courtesy check below.
+    event.target.value = '';
+    if (!chosen) return;
 
-    // An unrecognised contentType is left to the server rather than guessed at here.
-    const expected = EXPECTED_EXTENSIONS[item.contentType];
-    if (chosen && expected && !expected.some((ext) => chosen.name.toLowerCase().endsWith(ext))) {
-      toast.failed(FORMAT_MISMATCH);
-      // Dropping the file leaves Upload disabled, so nothing is sent and no ingest is started.
-      // Clearing the input as well means picking the *same* file again still fires a change
-      // event, which it would not if the element kept holding it.
-      event.target.value = '';
-      setFile(null);
+    const rejection = rejectionFor(chosen, item);
+    if (rejection) {
+      toast.failed(rejection);
       return;
     }
 
-    // Rejected the same way as a format mismatch: dropping the file leaves Upload disabled, so
-    // nothing is sent, no ingest starts and the displayed state is untouched.
-    const maxBytes = LOCKED_TIERS.includes(item.accessTier) ? LOCKED_MAX_BYTES : GENERAL_MAX_BYTES;
-    if (chosen && chosen.size > maxBytes) {
-      toast.failed(`File exceeds the ${maxBytes / 1024 / 1024} MB upload limit.`);
-      event.target.value = '';
-      setFile(null);
-      return;
-    }
-
-    setFile(chosen);
-  }
-
-  async function handleUpload() {
-    // Guards the double click as well as the disabled attribute does, because a fast second
-    // click can land before React has re-rendered the button.
-    if (uploading || !file) return;
-    setError(null);
     setUploading(true);
     // Read before the await, checked after it. The upload can outlive the panel — navigating
     // away mid-upload is ordinary — and the cleanup has then already bumped the cycle. Without
@@ -196,7 +196,7 @@ export default function ContentUploadPanel({ item }) {
     // three seconds, on a dead component, until the server reached a terminal state.
     const startCycle = cycleRef.current;
     try {
-      const status = await uploadCatalogueItemContent(item.id, file, format);
+      const status = await uploadCatalogueItemContent(item.id, chosen, format);
       if (startCycle !== cycleRef.current) return;
       setUploaded(status);
       toast.saved('Upload queued.');
@@ -220,10 +220,10 @@ export default function ContentUploadPanel({ item }) {
     }
   }
 
+  const maxMb = (LOCKED_TIERS.includes(item.accessTier) ? LOCKED_MAX_BYTES : GENERAL_MAX_BYTES) / 1024 / 1024;
+
   return (
     <div>
-      <h2>Content file</h2>
-
       <p className="muted">
         Current state: <IngestStateBadge state={current.contentState} />
       </p>
@@ -236,41 +236,37 @@ export default function ContentUploadPanel({ item }) {
         </p>
       ) : null}
 
-      <div className="field">
-        <FieldLabel id={FILE_ID} label="Choose a file" />
-        <input
-          id={FILE_ID}
-          name="file"
-          type="file"
-          className="input"
-          disabled={uploading}
-          onChange={handleFileChange}
-          aria-invalid={error ? 'true' : undefined}
-          aria-describedby={error ? `${HINT_ID} ${ERROR_ID}` : HINT_ID}
-        />
-        <p className="muted small" id={HINT_ID}>
-          Sent as {format}, matching this book&apos;s content type.
+      <label className={uploading ? 'upload-dropzone upload-dropzone-busy' : 'upload-dropzone'} htmlFor={FILE_ID}>
+        <Icon name={uploading ? 'progress_activity' : 'upload_file'} style={{ fontSize: 28 }} />
+        <span className="upload-dropzone-text">
+          {uploading ? (
+            'Uploading...'
+          ) : (
+            <>
+              Drop a {format} file here, or <span className="upload-dropzone-browse">browse</span>
+            </>
+          )}
+        </span>
+        <p className="muted small">Up to {maxMb} MB, sent as {format}. Uploads as soon as it's chosen.</p>
+      </label>
+      <input
+        id={FILE_ID}
+        name="file"
+        type="file"
+        className="file-input-hidden"
+        disabled={uploading}
+        onChange={handleFileChange}
+        aria-invalid={error ? 'true' : undefined}
+        aria-describedby={error ? `${HINT_ID} ${ERROR_ID}` : HINT_ID}
+      />
+      <p className="visually-hidden" id={HINT_ID}>
+        Sent as {format}, matching this book&apos;s content type.
+      </p>
+      {error ? (
+        <p className="field-error" id={ERROR_ID} role="alert">
+          {error}
         </p>
-        {error ? (
-          <p className="field-error" id={ERROR_ID} role="alert">
-            {error}
-          </p>
-        ) : null}
-      </div>
-
-      {file ? <p className="muted small">Selected: {file.name}</p> : null}
-
-      <div className="form-actions">
-        {/* type="button" so it can never submit a form this panel is rendered next to. */}
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={handleUpload}
-          disabled={!file || uploading}
-        >
-          {uploading ? 'Uploading...' : 'Upload'}
-        </button>
-      </div>
+      ) : null}
     </div>
   );
 }

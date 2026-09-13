@@ -14,12 +14,16 @@ import { api, pageQuery } from './client.js';
 // `status` is a RecordStatus: ACTIVE, SUSPENDED or RETIRED. Send the enum value, never a label.
 //
 // ── About the publisher code ─────────────────────────────────────────────────────────────
-// The team has settled this: publisher codes are UPPERCASE, matching the seeded data
-// (RTLG, CRCP). Note that PublisherWrite in wokay-api.yaml still documents
-// `pattern: '^[a-z0-9-]{2,40}$'`, so the YAML and the seed data disagree and the team has
-// chosen the seed. Nothing in this file lowercases, uppercases or validates a code: the
-// create form normalises what the operator types, and the server has the final say. Recorded
-// here because the next person to read the YAML will wonder.
+// Settled the other way from what this note used to say: the server enforces
+// PublisherWrite's documented pattern, `^[a-z0-9-]{2,40}$` — lowercase letters, digits and
+// hyphens, 2-40 characters — on create. A code typed in any other shape comes back as a
+// validation error, not a warning. The seeded rows (RTLG, CRCP) display uppercase only
+// because they were inserted directly, bypassing this same check; they are not a second,
+// accepted format. PublisherForm lowercases and strips anything else as the operator types,
+// and validates the same pattern client-side, so this is a field message before Create is
+// clicked rather than a trip to the server that comes back as a trace id. Nothing in this
+// file itself normalises or validates — that lives with the form, since it is what the
+// operator is looking at when it matters.
 //
 // No function here catches anything. Every failure arrives as the ApiError from errors.js,
 // and the screen decides whether it is a field message, a table error or a toast.

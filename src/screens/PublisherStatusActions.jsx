@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import TextField from '../ui/TextField.jsx';
+import Button from '../ui/Button.jsx';
 import { useToast } from '../ui/ToastContext.jsx';
 import { setPublisherStatus } from '../api/publishers.js';
 
@@ -55,18 +56,18 @@ export default function PublisherStatusActions({ publisher, onChanged }) {
           error={error}
           disabled={saving}
         />
-        <button type="button" className="btn btn-primary" onClick={handleSuspend} disabled={saving}>
+        <Button variant="primary" onClick={handleSuspend} disabled={saving}>
           {saving ? 'Suspending...' : 'Suspend'}
-        </button>
+        </Button>
       </>
     );
   }
 
   if (publisher.status === 'SUSPENDED') {
     return (
-      <button type="button" className="btn btn-primary" onClick={handleActivate} disabled={saving}>
+      <Button variant="primary" onClick={handleActivate} disabled={saving}>
         {saving ? 'Activating...' : 'Activate'}
-      </button>
+      </Button>
     );
   }
 

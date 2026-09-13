@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import DataTable from '../ui/DataTable.jsx';
+import Card from '../ui/Card.jsx';
+import Button from '../ui/Button.jsx';
 import { listCollections } from '../api/collections.js';
 
 const EMPTY_PAGE = { items: [], page: 0, size: 0, total: 0 };
@@ -44,13 +46,20 @@ export default function PublisherCollections({ publisherId }) {
   // publisherId rather than a module-level constant, since the actions column's link needs it.
   const columns = [
     { key: 'name', label: 'Name' },
-    { key: 'code', label: 'Code' },
-    { key: 'itemCount', label: 'Books' },
+    { key: 'code', label: 'Code', render: (row) => <span className="code-chip">{row.code}</span> },
+    {
+      key: 'itemCount',
+      label: 'Books',
+      render: (row) => (row.itemCount == null ? '—' : `${row.itemCount} item${row.itemCount === 1 ? '' : 's'}`),
+    },
     {
       key: 'actions',
       label: '',
       render: (row) => (
-        <Link className="btn" to={`/publishers/${publisherId}/collections/${row.id}/items`}>
+        <Link
+          className="btn btn-ghost btn-sm"
+          to={`/publishers/${publisherId}/collections/${row.id}/items`}
+        >
           Manage books
         </Link>
       ),
@@ -58,12 +67,12 @@ export default function PublisherCollections({ publisherId }) {
   ];
 
   return (
-    <section className="card">
-      <div className="row-buttons" style={{ justifyContent: 'space-between' }}>
+    <Card>
+      <div className="detail-section-title">
         <h2>Collections</h2>
-        <Link className="btn btn-primary" to={`/publishers/${publisherId}/collections/new`}>
+        <Button as={Link} variant="primary" size="sm" icon="add" to={`/publishers/${publisherId}/collections/new`}>
           New collection
-        </Link>
+        </Button>
       </div>
       <DataTable
         columns={columns}
@@ -78,6 +87,6 @@ export default function PublisherCollections({ publisherId }) {
           Showing the first {rows.length} of {result.total}.
         </p>
       ) : null}
-    </section>
+    </Card>
   );
 }

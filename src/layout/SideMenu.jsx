@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import Icon from '../ui/Icon.jsx';
 
 /**
  * The side menu.
@@ -14,30 +15,53 @@ import { NavLink } from 'react-router-dom';
  * console is visible without pretending a screen is there.
  */
 export const ENTRIES = [
-  { to: '/publishers', label: 'Publishers', roles: ['SUPER_ADMIN', 'PUBLISHER_ADMIN'] },
-  { to: '/books', label: 'Books', roles: ['SUPER_ADMIN', 'PUBLISHER_ADMIN'] },
+  {
+    to: '/dashboard',
+    label: 'Dashboard',
+    icon: 'grid_view',
+    roles: null,
+  },
+  {
+    to: '/publishers',
+    label: 'Publishers',
+    icon: 'menu_book',
+    roles: ['SUPER_ADMIN', 'PUBLISHER_ADMIN'],
+  },
+  {
+    to: '/books',
+    label: 'Catalogue items',
+    icon: 'auto_stories',
+    roles: ['SUPER_ADMIN', 'PUBLISHER_ADMIN'],
+  },
   {
     to: '/institutions',
     label: 'Institutions',
+    icon: 'account_balance',
     roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN'],
   },
-  { to: '/shelves', label: 'Shelves', roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN'] },
+  {
+    to: '/shelves',
+    label: 'Shelves',
+    icon: 'shelves',
+    roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN'],
+  },
   {
     to: '/entitlements',
     label: 'Entitlements',
+    icon: 'verified_user',
     roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN'],
   },
-  { to: '/operators', label: 'Operators', roles: ['SUPER_ADMIN'] },
-  { to: '/audit', label: 'Audit log', roles: ['SUPER_ADMIN'] },
+  { to: '/operators', label: 'Operators & Audit Log', icon: 'badge', roles: ['SUPER_ADMIN'] },
 ];
 
 // Where "/" sends a role the moment it signs in, and where NotAuthorized's "Go to Home" sends
-// it back to. Each value is that role's first entry above, spelled out rather than derived, so
-// the landing page does not silently change if the list is ever reordered.
+// it back to. The dashboard, for all three roles — it is the one screen built to adapt to
+// whichever scope is looking at it, rather than assuming SUPER_ADMIN and INSTITUTION_ADMIN want
+// different landing pages.
 const HOME_ROUTE = {
-  SUPER_ADMIN: '/publishers',
-  PUBLISHER_ADMIN: '/publishers',
-  INSTITUTION_ADMIN: '/institutions',
+  SUPER_ADMIN: '/dashboard',
+  PUBLISHER_ADMIN: '/dashboard',
+  INSTITUTION_ADMIN: '/dashboard',
 };
 
 export function homeRouteForRole(role) {
@@ -62,6 +86,7 @@ export default function SideMenu({ role, collapsed = false, onNavigate }) {
             <li key={entry.to}>
               {entry.soon ? (
                 <span className="side-soon" title="Not built yet">
+                  {entry.icon ? <Icon name={entry.icon} className="side-icon" /> : null}
                   {entry.label}
                 </span>
               ) : (
@@ -70,6 +95,7 @@ export default function SideMenu({ role, collapsed = false, onNavigate }) {
                   className={({ isActive }) => (isActive ? 'side-on' : undefined)}
                   onClick={onNavigate}
                 >
+                  {entry.icon ? <Icon name={entry.icon} className="side-icon" /> : null}
                   {entry.label}
                 </NavLink>
               )}

@@ -1,3 +1,5 @@
+import Button from './Button.jsx';
+
 /**
  * Save and cancel, in one place so every form behaves the same.
  *
@@ -13,12 +15,12 @@ export default function FormActions({
 }) {
   return (
     <div className="form-actions">
-      <button type="submit" className="btn btn-primary" disabled={saving || disabled}>
+      <Button type="submit" variant="primary" disabled={saving || disabled}>
         {saving ? 'Saving...' : saveLabel}
-      </button>
-      <button type="button" className="btn" onClick={onCancel} disabled={saving}>
+      </Button>
+      <Button type="button" onClick={onCancel} disabled={saving}>
         {cancelLabel}
-      </button>
+      </Button>
     </div>
   );
 }

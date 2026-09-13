@@ -4,21 +4,22 @@ import RequireAuth from './auth/RequireAuth.jsx';
 import { ENTRIES, homeRouteForRole } from './layout/SideMenu.jsx';
 import { useAuth } from './auth/AuthContext.jsx';
 import LoginScreen from './screens/LoginScreen.jsx';
+import DashboardScreen from './screens/DashboardScreen.jsx';
 import BooksScreen from './screens/BooksScreen.jsx';
 import BookFormScreen from './screens/BookFormScreen.jsx';
 import ShelvesScreen from './screens/ShelvesScreen.jsx';
 import EntitlementsScreen from './screens/EntitlementsScreen.jsx';
 import InstitutionsScreen from './screens/InstitutionsScreen.jsx';
 import InstitutionFormScreen from './screens/InstitutionFormScreen.jsx';
+import InstitutionDetailScreen from './screens/InstitutionDetailScreen.jsx';
 import PublishersScreen from './screens/PublishersScreen.jsx';
 import PublisherForm from './screens/PublisherForm.jsx';
 import PublisherEditScreen from './screens/PublisherEditScreen.jsx';
 import PublisherDetailScreen from './screens/PublisherDetailScreen.jsx';
 import CollectionFormScreen from './screens/CollectionFormScreen.jsx';
 import CollectionItemsScreen from './screens/CollectionItemsScreen.jsx';
-import OperatorsScreen from './screens/OperatorsScreen.jsx';
+import OperatorsAuditScreen from './screens/OperatorsAuditScreen.jsx';
 import OperatorFormScreen from './screens/OperatorFormScreen.jsx';
-import AuditLogsScreen from './screens/AuditLogsScreen.jsx';
 import NotFound from './screens/NotFound.jsx';
 
 // Which roles may use each route group, read from the same table SideMenu builds its links
@@ -34,7 +35,6 @@ const INSTITUTION_ROLES = rolesFor('/institutions');
 const SHELF_ROLES = rolesFor('/shelves');
 const ENTITLEMENT_ROLES = rolesFor('/entitlements');
 const OPERATOR_ROLES = rolesFor('/operators');
-const AUDIT_ROLES = rolesFor('/audit');
 
 /**
  * Resolves "/" to the signed-in operator's own landing page, instead of the fixed
@@ -78,6 +78,14 @@ export default function App() {
       >
         <Route path="/" element={<RoleHome />} />
 
+        {/* No `roles` restriction on RequireAuth here — every signed-in role has a dashboard;
+            DashboardScreen itself is what varies by role, same split EntitlementsScreen uses. */}
+        <Route path="/dashboard" element={<DashboardScreen />} />
+
+        {/* Nested, not three flat routes — same reasoning as /books below: InstitutionsScreen
+            renders for every /institutions/* address and stays mounted underneath, with an
+            <Outlet/> for whichever child path is active, so Stitch's "Add Institution" modal
+            overlays the real table (blurred through its backdrop) instead of replacing it. */}
         <Route
           path="/institutions"
           element={
@@ -85,24 +93,28 @@ export default function App() {
               <InstitutionsScreen />
             </RequireAuth>
           }
-        />
+        >
+          <Route path="new" element={<InstitutionFormScreen />} />
+          <Route path=":institutionId/edit" element={<InstitutionFormScreen />} />
+        </Route>
+        {/* The institution's own detail page — a different literal path (no /new or /edit
+            suffix), so nesting those two above it does not shadow this one. Same relationship
+            /publishers/:publisherId has to the nested /publishers routes below. */}
         <Route
-          path="/institutions/new"
+          path="/institutions/:institutionId"
           element={
             <RequireAuth roles={INSTITUTION_ROLES}>
-              <InstitutionFormScreen />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/institutions/:institutionId/edit"
-          element={
-            <RequireAuth roles={INSTITUTION_ROLES}>
-              <InstitutionFormScreen />
+              <InstitutionDetailScreen />
             </RequireAuth>
           }
         />
 
+        {/* Nested, not three flat routes: BooksScreen renders for every /books/* address and
+            stays mounted underneath, with an <Outlet/> for whichever child path is active.
+            That's what lets the create/edit drawer overlay the real table, blurred through
+            its backdrop, instead of replacing it outright — the address still changes
+            (/books/new, /books/:itemId/edit), same as every other create/edit route in this
+            app, just without unmounting the list to get there. */}
         <Route
           path="/books"
           element={
@@ -110,23 +122,10 @@ export default function App() {
               <BooksScreen />
             </RequireAuth>
           }
-        />
-        <Route
-          path="/books/new"
-          element={
-            <RequireAuth roles={BOOK_ROLES}>
-              <BookFormScreen />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/books/:itemId/edit"
-          element={
-            <RequireAuth roles={BOOK_ROLES}>
-              <BookFormScreen />
-            </RequireAuth>
-          }
-        />
+        >
+          <Route path="new" element={<BookFormScreen />} />
+          <Route path=":itemId/edit" element={<BookFormScreen />} />
+        </Route>
 
         <Route
           path="/shelves"
@@ -146,6 +145,13 @@ export default function App() {
           }
         />
 
+        {/* Nested, not three flat routes: PublishersScreen renders for /publishers and its
+            children, staying mounted underneath with an <Outlet/> for whichever child path is
+            active — the same "list stays behind the modal, blurred" treatment /books/new and
+            /books/:itemId/edit use, on the same real addresses as before. The publisher's own
+            detail page (/publishers/:publisherId, no /edit suffix) is a separate, unnested
+            route below — a different literal path, so nesting new/edit here does not shadow
+            it. */}
         <Route
           path="/publishers"
           element={
@@ -153,28 +159,15 @@ export default function App() {
               <PublishersScreen />
             </RequireAuth>
           }
-        />
-        <Route
-          path="/publishers/new"
-          element={
-            <RequireAuth roles={PUBLISHER_ROLES}>
-              <PublisherForm backTo="/publishers" backLabel="Back to publishers" />
-            </RequireAuth>
-          }
-        />
+        >
+          <Route path="new" element={<PublisherForm />} />
+          <Route path=":publisherId/edit" element={<PublisherEditScreen />} />
+        </Route>
         <Route
           path="/publishers/:publisherId"
           element={
             <RequireAuth roles={PUBLISHER_ROLES}>
               <PublisherDetailScreen />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/publishers/:publisherId/edit"
-          element={
-            <RequireAuth roles={PUBLISHER_ROLES}>
-              <PublisherEditScreen />
             </RequireAuth>
           }
         />
@@ -196,39 +189,25 @@ export default function App() {
           }
         />
 
+        {/* Nested, not three flat routes — same reasoning as every other migrated list page:
+            OperatorsAuditScreen renders for every /operators/* address and stays mounted
+            underneath, with an <Outlet/> for whichever child path is active, so the Add/Edit
+            Operator modal overlays the real list (blurred through its backdrop) instead of
+            replacing it. Operators and the audit trail used to be two side-menu entries
+            (/operators, /audit); /audit now redirects here, onto this screen's own "Security &
+            Activity Audit Log" tab, rather than 404ing an old bookmark or link. */}
         <Route
           path="/operators"
           element={
             <RequireAuth roles={OPERATOR_ROLES}>
-              <OperatorsScreen />
+              <OperatorsAuditScreen />
             </RequireAuth>
           }
-        />
-        <Route
-          path="/operators/new"
-          element={
-            <RequireAuth roles={OPERATOR_ROLES}>
-              <OperatorFormScreen />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/operators/:adminUserId/edit"
-          element={
-            <RequireAuth roles={OPERATOR_ROLES}>
-              <OperatorFormScreen />
-            </RequireAuth>
-          }
-        />
-
-        <Route
-          path="/audit"
-          element={
-            <RequireAuth roles={AUDIT_ROLES}>
-              <AuditLogsScreen />
-            </RequireAuth>
-          }
-        />
+        >
+          <Route path="new" element={<OperatorFormScreen />} />
+          <Route path=":adminUserId/edit" element={<OperatorFormScreen />} />
+        </Route>
+        <Route path="/audit" element={<Navigate to="/operators" replace />} />
 
         <Route path="*" element={<NotFound />} />
       </Route>

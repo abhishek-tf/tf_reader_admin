@@ -1,13 +1,100 @@
-import { useEffect, useState } from 'react';
-import DataTable from './DataTable.jsx';
-import { useToast } from './ToastContext.jsx';
-import { listCatalogueItems } from '../api/catalogueItems.js';
-import { fetchAllPages } from '../api/client.js';
+import CoverThumb from './CoverThumb.jsx';
+import Icon from './Icon.jsx';
+import { useShelfItems } from './useShelfItems.js';
+
+const ENTITLEMENT_LABEL = {
+  ACTIVE: 'Entitled',
+  PENDING: 'Pending entitlement',
+  SUSPENDED: 'Entitlement suspended',
+  REVOKED: 'Entitlement revoked',
+  NONE: 'Not entitled',
+};
+
+function yearOf(publishedAt) {
+  return publishedAt ? publishedAt.slice(0, 4) : null;
+}
+
+/** The ISBN / publisher (year) / entitlement caption line under a picked book's title —
+ * Stitch's own metadata line for a curated shelf book. Nothing shown here is fabricated: it
+ * only renders once the item itself has resolved, and only the parts of it that are present. */
+export function ShelfBookMeta({ item }) {
+  if (!item) return null;
+  return (
+    <span className="shelf-book-meta">
+      {item.isbn ? <span>ISBN: {item.isbn}</span> : null}
+      {item.isbn && item.publisherName ? <span>•</span> : null}
+      {item.publisherName ? (
+        <span>
+          {item.publisherName}
+          {yearOf(item.publishedAt) ? ` (${yearOf(item.publishedAt)})` : ''}
+        </span>
+      ) : null}
+      {item.entitlementStatus ? (
+        <>
+          <span>•</span>
+          <span>{ENTITLEMENT_LABEL[item.entitlementStatus] ?? item.entitlementStatus}</span>
+        </>
+      ) : null}
+    </span>
+  );
+}
+
+/** One picked book's row: cover, title, its meta caption, and the up/down/remove actions.
+ * Shared by the page's own picked list (ShelfPickedBooks, below) and the picker modal's right
+ * panel (ShelfContentsPanel). */
+export function ShelfBookRow({ itemId, item, index, lastIndex, disabled, onMove, onRemove }) {
+  return (
+    <div className="shelf-book-row">
+      <div className="table-entity">
+        <CoverThumb
+          id={itemId}
+          coverUrl={item?.coverUrl}
+          contentType={item?.contentType}
+          updatedAt={item?.updatedAt}
+        />
+        <div className="table-entity-text">
+          <span className="row-link-emphasis">{item?.title ?? itemId}</span>
+          <ShelfBookMeta item={item} />
+        </div>
+      </div>
+      <div className="row-buttons" style={{ marginBottom: 0 }}>
+        <button
+          type="button"
+          className="btn-icon-ghost"
+          aria-label="Move up"
+          disabled={disabled || index === 0}
+          onClick={() => onMove(index, -1)}
+        >
+          <Icon name="arrow_upward" />
+        </button>
+        <button
+          type="button"
+          className="btn-icon-ghost"
+          aria-label="Move down"
+          disabled={disabled || index === lastIndex}
+          onClick={() => onMove(index, 1)}
+        >
+          <Icon name="arrow_downward" />
+        </button>
+        <button
+          type="button"
+          className="btn-icon-ghost"
+          aria-label="Remove from shelf"
+          disabled={disabled}
+          onClick={() => onRemove(itemId)}
+        >
+          <Icon name="close" />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 /**
- * The shelf's picked items, in display order, with reorder and remove. Split out of
- * ShelfBookPicker, which was over the line budget once this and the search half were both in
- * one file.
+ * The shelf's picked items, in display order, with reorder and remove — shown directly under
+ * the "Add entitled book" button on the Shelves page itself, so a shelf's contents are visible
+ * without opening the picker. Split out of ShelfBookPicker, which was over the line budget once
+ * this and the search half were both in one file.
  */
 export default function ShelfPickedBooks({
   institutionId,
@@ -17,88 +104,31 @@ export default function ShelfPickedBooks({
   onMove,
   disabled,
 }) {
-  const toast = useToast();
-  const [titles, setTitles] = useState({});
+  const items = useShelfItems(institutionId, itemIds);
 
-  useEffect(() => {
-    if (itemIds.every((id) => titles[id])) return;
-    let cancelled = false;
-    // The single-item endpoint requires publisher-level access and 403s for an institution
-    // admin - the only role that actually uses this screen - so titles are resolved from the
-    // list endpoint instead of one request per id. `until` stops the walk the moment every
-    // picked id has turned up, so this terminates quickly for any institution smaller than a
-    // few hundred books instead of paging through its whole catalogue for nothing.
-    fetchAllPages((page) => listCatalogueItems({ institutionId, page, size: 100 }), {
-      until: (seen) => itemIds.every((id) => seen.some((item) => item.id === id)),
-    })
-      .then((items) => {
-        if (cancelled) return;
-        const found = {};
-        for (const item of items) {
-          if (itemIds.includes(item.id)) found[item.id] = item.title;
-        }
-        setTitles((c) => ({ ...c, ...found }));
-      })
-      .catch((error) => {
-        if (cancelled) return;
-        toast.failed(error);
-      });
-    return () => {
-      cancelled = true;
-    };
-    // Only re-running when a picked id is not yet known; re-running on every search keystroke
-    // in the sibling component would refetch the same page for no reason.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [itemIds]);
-
-  const rows = itemIds.map((itemId, index) => ({ id: itemId, index }));
-
-  const columns = [
-    { key: 'title', label: 'Title', render: (row) => titles[row.id] ?? row.id },
-    {
-      key: 'actions',
-      label: '',
-      render: (row) => (
-        <div className="row-buttons">
-          <button
-            type="button"
-            className="btn"
-            disabled={disabled || row.index === 0}
-            onClick={() => onMove(row.index, -1)}
-          >
-            Up
-          </button>
-          <button
-            type="button"
-            className="btn"
-            disabled={disabled || row.index === itemIds.length - 1}
-            onClick={() => onMove(row.index, 1)}
-          >
-            Down
-          </button>
-          <button
-            type="button"
-            className="btn"
-            disabled={disabled}
-            onClick={() => onRemove(row.id)}
-          >
-            Remove
-          </button>
-        </div>
-      ),
-    },
-  ];
+  if (itemIds.length === 0) {
+    return (
+      <p className="muted small">No books picked yet. This shelf stays hidden until you add one.</p>
+    );
+  }
 
   return (
-    <div>
-      <p className="field-label">
+    <div className="stack" style={{ gap: 'var(--space-2xs)' }}>
+      <p className="field-label field-label-compact">
         Picked, in display order ({itemIds.length} of {maxItems})
       </p>
-      <DataTable
-        columns={columns}
-        rows={rows}
-        emptyMessage="No books picked yet. This shelf stays hidden until you add one."
-      />
+      {itemIds.map((itemId, index) => (
+        <ShelfBookRow
+          key={itemId}
+          itemId={itemId}
+          item={items[itemId]}
+          index={index}
+          lastIndex={itemIds.length - 1}
+          disabled={disabled}
+          onMove={onMove}
+          onRemove={onRemove}
+        />
+      ))}
     </div>
   );
 }

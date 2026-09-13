@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Card from './Card.jsx';
 import DataTable from './DataTable.jsx';
 import Pagination from './Pagination.jsx';
 import RequestButton from './RequestButton.jsx';
@@ -12,8 +13,7 @@ const PAGE_SIZE = 20;
 /**
  * Every collection across every publisher, tagged with this institution's own status for the
  * collection as a whole, against GET /api/admin/v1/collections - the collection counterpart of
- * the books table in InstitutionCatalogueBrowser, split out for the same reason
- * RequestScopeForm was: that file was already at the line budget.
+ * ItemRequestBrowser; both live under InstitutionEntitlementsScreen's "Request Access" tab.
  */
 export default function CollectionRequestBrowser({ institutionId }) {
   const toast = useToast();
@@ -77,9 +77,11 @@ export default function CollectionRequestBrowser({ institutionId }) {
   ];
 
   return (
-    <section className="card">
-      <h2>Collections</h2>
-      <p className="muted">
+    <Card>
+      <div className="detail-section-title">
+        <h2>Collections</h2>
+      </div>
+      <p className="muted small">
         Every collection you can ask for as a package, and where each request stands.
       </p>
       <DataTable
@@ -91,6 +93,6 @@ export default function CollectionRequestBrowser({ institutionId }) {
         onRetry={() => load()}
       />
       <Pagination page={page} size={PAGE_SIZE} total={collections.total} onPageChange={setPage} />
-    </section>
+    </Card>
   );
 }

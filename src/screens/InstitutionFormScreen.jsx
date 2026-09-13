@@ -1,4 +1,4 @@
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import InstitutionForm from './InstitutionForm.jsx';
 import { useRecord } from './useRecord.js';
 import RecordLoadState from '../ui/RecordLoadState.jsx';
@@ -6,7 +6,9 @@ import { useToast } from '../ui/ToastContext.jsx';
 import { createInstitution, getInstitution, updateInstitution } from '../api/institution.js';
 
 /**
- * Create or edit one institution, at its own address.
+ * Create or edit one institution, at its own address, rendered as InstitutionForm's own modal
+ * overlay through InstitutionsScreen's `<Outlet/>` (see App.jsx's nested `/institutions`
+ * routes) — the list stays mounted and blurred behind it.
  *
  * `/institutions/new` creates. `/institutions/:institutionId/edit` edits, and fetches the
  * institution itself rather than being handed a row, so a reload or a pasted link works.
@@ -32,7 +34,9 @@ export default function InstitutionFormScreen() {
     }
   }
 
-  if (editing && (loading || error)) {
+  // Only while there's no record at all yet — once one has loaded, a stray re-fetch flipping
+  // `loading` back to true must not blank out a form the operator is mid-edit on.
+  if (editing && !record && (loading || error)) {
     return (
       <RecordLoadState
         loading={loading}
@@ -45,21 +49,10 @@ export default function InstitutionFormScreen() {
   }
 
   return (
-    <div className="stack">
-      <section className="card">
-        <div className="row-buttons">
-          <Link className="btn" to="/institutions">
-            Back to institutions
-          </Link>
-        </div>
-        <h1>{editing ? 'Edit institution' : 'New institution'}</h1>
-      </section>
-
-      <InstitutionForm
-        initial={record}
-        onSubmit={handleSubmit}
-        onCancel={() => navigate('/institutions')}
-      />
-    </div>
+    <InstitutionForm
+      initial={record}
+      onSubmit={handleSubmit}
+      onCancel={() => navigate('/institutions')}
+    />
   );
 }
