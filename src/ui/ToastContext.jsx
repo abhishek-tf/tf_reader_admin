@@ -1,8 +1,15 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
+import Icon from './Icon.jsx';
 
 const ToastContext = createContext(null);
 
 const DISMISS_AFTER_MS = 4000;
+
+const TONE_ICON = {
+  ok: 'check_circle',
+  error: 'error',
+  info: 'info',
+};
 
 /**
  * The "saved" and "that failed" messages, for the whole app.
@@ -56,6 +63,7 @@ export function ToastProvider({ children }) {
       <div className="toasts" role="status" aria-live="polite">
         {toasts.map((toast) => (
           <div key={toast.id} className={`toast toast-${toast.tone}`}>
+            <Icon name={TONE_ICON[toast.tone] ?? 'info'} style={{ fontSize: 18 }} />
             <div className="toast-body">
               <p>{toast.text}</p>
               {toast.traceId ? <p className="trace">Trace {toast.traceId}</p> : null}

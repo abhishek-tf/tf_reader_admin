@@ -18,7 +18,9 @@ export const STATUS_OPTIONS = [
 
 // One row per field, in display order. `kind` picks TextField vs SelectField; `showIf` hides
 // a field until it applies, so numberOfPages and contentState — both server-derived — are
-// simply never listed here rather than shown disabled.
+// simply never listed here rather than shown disabled. `section` is presentation grouping
+// only ('imprint' | 'rights' | 'bibliographic') — it groups the drawer's field blocks and
+// does not touch validation, payload shape or ordering below.
 export const FIELDS = [
   {
     name: 'publisherId',
@@ -26,24 +28,7 @@ export const FIELDS = [
     kind: 'text',
     placeholder: 'pub_rtlg',
     required: true,
-  },
-  { name: 'title', label: 'Title', kind: 'text', maxLength: 300, required: true },
-  { name: 'subtitle', label: 'Subtitle', kind: 'text', maxLength: 300 },
-  { name: 'authors', label: 'Authors', kind: 'text', hint: 'Comma separated.' },
-  {
-    name: 'editors',
-    label: 'Editors',
-    kind: 'text',
-    hint: 'Comma separated. Edited volumes have editors and no authors.',
-  },
-  { name: 'narrators', label: 'Narrators', kind: 'text', hint: 'Comma separated. Audio only.' },
-  {
-    name: 'isbn',
-    label: 'ISBN',
-    kind: 'text',
-    placeholder: '9780367211745',
-    hint: 'Optional. Audiobooks frequently have none.',
-    lockOnceSet: true,
+    section: 'imprint',
   },
   {
     name: 'contentType',
@@ -51,6 +36,7 @@ export const FIELDS = [
     kind: 'select',
     options: CONTENT_TYPE_OPTIONS,
     required: true,
+    section: 'imprint',
   },
   {
     name: 'accessTier',
@@ -58,6 +44,33 @@ export const FIELDS = [
     kind: 'select',
     options: TIER_OPTIONS,
     required: true,
+    section: 'imprint',
+  },
+  { name: 'title', label: 'Title', kind: 'text', maxLength: 300, required: true, section: 'bibliographic' },
+  { name: 'subtitle', label: 'Subtitle', kind: 'text', maxLength: 300, section: 'bibliographic' },
+  { name: 'authors', label: 'Authors', kind: 'text', hint: 'Comma separated.', section: 'bibliographic' },
+  {
+    name: 'editors',
+    label: 'Editors',
+    kind: 'text',
+    hint: 'Comma separated. Edited volumes have editors and no authors.',
+    section: 'bibliographic',
+  },
+  {
+    name: 'narrators',
+    label: 'Narrators',
+    kind: 'text',
+    hint: 'Comma separated. Audio only.',
+    section: 'bibliographic',
+  },
+  {
+    name: 'isbn',
+    label: 'ISBN',
+    kind: 'text',
+    placeholder: '9780367211745',
+    hint: 'Optional. Audiobooks frequently have none.',
+    lockOnceSet: true,
+    section: 'bibliographic',
   },
   {
     name: 'duration',
@@ -66,13 +79,34 @@ export const FIELDS = [
     inputType: 'number',
     showIf: (form) => form.contentType === 'AUDIO',
     required: (form) => form.contentType === 'AUDIO',
+    section: 'bibliographic',
   },
-  { name: 'subjects', label: 'Subjects', kind: 'text', hint: 'Comma separated.' },
-  { name: 'language', label: 'Language', kind: 'text', placeholder: 'en', maxLength: 20 },
-  { name: 'description', label: 'Description', kind: 'text', multiline: true, maxLength: 4000 },
-  { name: 'publishedAt', label: 'Published date', kind: 'text', inputType: 'date' },
-  { name: 'coverUrl', label: 'Cover URL', kind: 'text', inputType: 'url' },
-  { name: 'status', label: 'Status', kind: 'select', options: STATUS_OPTIONS },
+  { name: 'subjects', label: 'Subjects', kind: 'text', hint: 'Comma separated.', section: 'bibliographic' },
+  {
+    name: 'language',
+    label: 'Language',
+    kind: 'text',
+    placeholder: 'en',
+    maxLength: 20,
+    section: 'bibliographic',
+  },
+  {
+    name: 'description',
+    label: 'Description',
+    kind: 'text',
+    multiline: true,
+    maxLength: 4000,
+    section: 'bibliographic',
+  },
+  {
+    name: 'publishedAt',
+    label: 'Published date',
+    kind: 'text',
+    inputType: 'date',
+    section: 'bibliographic',
+  },
+  { name: 'coverUrl', label: 'Cover URL', kind: 'text', inputType: 'url', section: 'bibliographic' },
+  { name: 'status', label: 'Status', kind: 'select', options: STATUS_OPTIONS, section: 'bibliographic' },
 ];
 
 const ISBN_PATTERN = /^(97[89])?[0-9]{9}[0-9X]$/;

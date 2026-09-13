@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import CollectionBookPicker from '../ui/CollectionBookPicker.jsx';
+import Card from '../ui/Card.jsx';
+import Button from '../ui/Button.jsx';
+import Icon from '../ui/Icon.jsx';
 import { listCollections } from '../api/collections.js';
 
 /**
@@ -40,43 +43,55 @@ export default function CollectionItemsScreen() {
 
   if (error) {
     return (
-      <div className="card">
+      <Card>
         <h1>Cannot show this collection</h1>
         <p className="muted">{error.friendly}</p>
         {error.traceId ? <p className="trace">Trace {error.traceId}</p> : null}
         <Link className="btn" to={backToPublisher}>
           Back to the publisher
         </Link>
-      </div>
+      </Card>
     );
   }
 
   if (!collection) {
     return (
-      <div className="card">
+      <Card>
         <h1>No such collection</h1>
         <Link className="btn" to={backToPublisher}>
           Back to the publisher
         </Link>
-      </div>
+      </Card>
     );
   }
 
   return (
     <div className="stack">
-      <section className="card">
-        <div className="row-buttons">
-          <Link className="btn" to={backToPublisher}>
+      <Card>
+        <div className="detail-hero-top">
+          <Button as={Link} variant="ghost" size="sm" icon="arrow_back" to={backToPublisher}>
             Back to the publisher
-          </Link>
+          </Button>
         </div>
-        <h1>{collection.name}</h1>
-        <p className="muted">{collection.code}</p>
-      </section>
+        <div className="detail-hero-main">
+          <span className="table-entity-avatar detail-hero-avatar" aria-hidden="true">
+            <Icon name="collections_bookmark" />
+          </span>
+          <div className="detail-hero-body">
+            <h1 className="detail-hero-title">{collection.name}</h1>
+            <div className="detail-hero-meta">
+              <span className="code-chip">{collection.code}</span>
+            </div>
+          </div>
+        </div>
+      </Card>
 
-      <section className="card">
-        <CollectionBookPicker collectionId={collectionId} />
-      </section>
+      <Card>
+        <div className="detail-section-title">
+          <h2>Books in this collection</h2>
+        </div>
+        <CollectionBookPicker collectionId={collectionId} publisherId={publisherId} />
+      </Card>
     </div>
   );
 }
