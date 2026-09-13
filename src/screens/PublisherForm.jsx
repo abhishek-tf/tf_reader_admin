@@ -102,9 +102,12 @@ export default function PublisherForm({ publisher = null, onSaved, onCancel }) {
         toast.saved('Publisher saved.');
         onSaved(updated);
       } else {
-        const created = await createPublisher(buildWrite());
+        await createPublisher(buildWrite());
         toast.saved('Publisher created.');
-        navigate(`/publishers/${created.id}`, { replace: true });
+        // Back to the list, not the new publisher's own detail page: /publishers/:id sits
+        // outside the nested /publishers routes this modal renders through, so landing there
+        // would unmount the list (and this modal) instead of closing back onto it.
+        navigate('/publishers');
       }
     } catch (failure) {
       if (failure.code === ErrorCode.CODE_TAKEN) {
@@ -127,7 +130,12 @@ export default function PublisherForm({ publisher = null, onSaved, onCancel }) {
   const previewInitials = (form.code || form.name).slice(0, 2).toUpperCase();
 
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="publisher-form-title">
+    <div
+      className="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="publisher-form-title"
+    >
       <div className="modal-card">
         <div className="modal-header">
           <h2 className="modal-title" id="publisher-form-title">
@@ -193,17 +201,13 @@ export default function PublisherForm({ publisher = null, onSaved, onCancel }) {
                   disabled={saving}
                 />
               </div>
-              <span
-                className="table-entity-avatar"
-                aria-hidden="true"
-                style={{ marginTop: 28 }}
-              >
+              <span className="table-entity-avatar" aria-hidden="true" style={{ marginTop: 28 }}>
                 {previewInitials}
               </span>
             </div>
             <p className="muted small">
-              Suspending or delisting a publisher immediately pauses catalogue distribution
-              across every institution&rsquo;s feed.
+              Suspending or delisting a publisher immediately pauses catalogue distribution across
+              every institution&rsquo;s feed.
             </p>
           </div>
 

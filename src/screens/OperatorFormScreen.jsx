@@ -1,10 +1,12 @@
-import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import OperatorForm from './OperatorForm.jsx';
 import { useToast } from '../ui/ToastContext.jsx';
 import { createAdminUser, updateAdminUser } from '../api/adminUsers.js';
 
 /**
- * Create or edit one console operator, at its own address.
+ * Create or edit one console operator, at its own address, rendered as OperatorForm's own
+ * modal overlay through OperatorsAuditScreen's `<Outlet/>` (see App.jsx's nested `/operators`
+ * routes) — the operator list stays mounted and blurred behind it.
  *
  * The operator being edited is handed over in the link's state, because **there is no
  * GET /admin-users/{id} in the contract** — list, create, update and deactivate are the whole
@@ -44,23 +46,10 @@ export default function OperatorFormScreen() {
   }
 
   return (
-    <div className="stack">
-      <section className="card">
-        <div className="row-buttons">
-          <Link className="btn" to="/operators">
-            Back to operators
-          </Link>
-        </div>
-        <h1>{editing ? 'Edit operator' : 'Add operator'}</h1>
-      </section>
-
-      <section className="card">
-        <OperatorForm
-          initial={operator}
-          onSubmit={handleSubmit}
-          onCancel={() => navigate('/operators')}
-        />
-      </section>
-    </div>
+    <OperatorForm
+      initial={operator}
+      onSubmit={handleSubmit}
+      onCancel={() => navigate('/operators')}
+    />
   );
 }

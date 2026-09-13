@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Card from './Card.jsx';
 import DataTable from './DataTable.jsx';
 import Pagination from './Pagination.jsx';
 import FilterBar from './FilterBar.jsx';
@@ -18,8 +19,8 @@ const PAGE_SIZE = 20;
 
 /**
  * Every book an institution admin can ask for, tagged with where their request stands, against
- * GET /api/admin/v1/catalogue-items. The item-scope counterpart of CollectionRequestBrowser,
- * split out of InstitutionCatalogueBrowser since that file was over the line budget.
+ * GET /api/admin/v1/catalogue-items. The item-scope counterpart of CollectionRequestBrowser;
+ * both live under InstitutionEntitlementsScreen's "Request Access" tab.
  */
 export default function ItemRequestBrowser({ institutionId }) {
   const toast = useToast();
@@ -96,9 +97,11 @@ export default function ItemRequestBrowser({ institutionId }) {
   ];
 
   return (
-    <section className="card">
-      <h1>Browse &amp; request</h1>
-      <p className="muted">Every book you can ask for, and where each request stands.</p>
+    <Card>
+      <div className="detail-section-title">
+        <h2>Books</h2>
+      </div>
+      <p className="muted small">Every book you can ask for, and where each request stands.</p>
 
       <FilterBar
         searchValue={filters.q}
@@ -131,6 +134,6 @@ export default function ItemRequestBrowser({ institutionId }) {
         onRetry={() => loadItems()}
       />
       <Pagination page={page} size={PAGE_SIZE} total={items.total} onPageChange={setPage} />
-    </section>
+    </Card>
   );
 }

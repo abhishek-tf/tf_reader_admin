@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
 import Icon from './Icon.jsx';
 
-const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /**
  * The centred, Indigo-backdrop dialog Stitch uses for a focused edit (Create Publisher, Add
@@ -13,6 +14,16 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), selec
  */
 export default function Modal({ open, onClose, title, children, footer, width = 'default' }) {
   const cardRef = useRef(null);
+  // `onClose` is an inline arrow function at nearly every call site, so it is a new reference
+  // on every render of the caller — including the one caused by typing a single character into
+  // any field inside this modal, since that's a state update in the caller (or a component
+  // between it and here) same as any other. A ref sidesteps that: the Escape/Tab handler below
+  // always calls whatever `onClose` currently is, without needing it in the effect's own
+  // dependency array.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
 
   useEffect(() => {
     if (!open) return undefined;
@@ -22,7 +33,7 @@ export default function Modal({ open, onClose, title, children, footer, width = 
 
     function handleKeydown(event) {
       if (event.key === 'Escape') {
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (event.key !== 'Tab' || !card) return;
@@ -41,11 +52,19 @@ export default function Modal({ open, onClose, title, children, footer, width = 
 
     document.addEventListener('keydown', handleKeydown);
     return () => document.removeEventListener('keydown', handleKeydown);
-  }, [open, onClose]);
+    // `onClose` deliberately isn't a dependency here — see the ref above. Re-running this on
+    // every caller render was the actual bug: it re-grabs and refocuses the first focusable
+    // element in the dialog every time, which yanked focus out of whatever field the operator
+    // was mid-keystroke in.
+  }, [open]);
 
   if (!open) return null;
 
-  const cardClass = ['modal-card', width === 'wide' && 'modal-card-wide', width === 'xwide' && 'modal-card-xwide']
+  const cardClass = [
+    'modal-card',
+    width === 'wide' && 'modal-card-wide',
+    width === 'xwide' && 'modal-card-xwide',
+  ]
     .filter(Boolean)
     .join(' ');
 

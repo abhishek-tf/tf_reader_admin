@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import PublisherStatusActions from './PublisherStatusActions.jsx';
 import PublisherCollections from './PublisherCollections.jsx';
 import StatusBadge from '../ui/StatusBadge.jsx';
@@ -16,6 +16,7 @@ function initialsOf(code) {
 
 export default function PublisherDetailScreen() {
   const { publisherId } = useParams();
+  const location = useLocation();
 
   const [publisher, setPublisher] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -43,6 +44,15 @@ export default function PublisherDetailScreen() {
       cancelled = true;
     };
   }, [publisherId, reloadCount]);
+
+  // "View collections" on the list links straight here with #collections, since this is a
+  // single scrolling page and that section sits below the hero and status cards - the browser
+  // can't do this scroll on its own because the element with that id doesn't exist yet at the
+  // moment the page first paints (the publisher, and everything after it, is still loading).
+  useEffect(() => {
+    if (location.hash !== '#collections' || !publisher) return;
+    document.getElementById('collections')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [location.hash, publisher]);
 
   if (loading) {
     return <p className="muted">Loading the publisher...</p>;
@@ -115,7 +125,9 @@ export default function PublisherDetailScreen() {
         <PublisherStatusActions publisher={publisher} onChanged={setPublisher} />
       </Card>
 
-      <PublisherCollections publisherId={publisher.id} />
+      <div id="collections">
+        <PublisherCollections publisherId={publisher.id} />
+      </div>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Card from './Card.jsx';
 import DataTable from './DataTable.jsx';
 import Pagination from './Pagination.jsx';
 import FilterBar from './FilterBar.jsx';
@@ -77,9 +78,11 @@ export default function PublisherRequestBrowser({ institutionId }) {
   ];
 
   return (
-    <section className="card">
-      <h2>Publishers</h2>
-      <p className="muted">
+    <Card>
+      <div className="detail-section-title">
+        <h2>Publishers</h2>
+      </div>
+      <p className="muted small">
         Every publisher you can ask for as a whole, and where each request stands.
       </p>
       <FilterBar
@@ -98,6 +101,6 @@ export default function PublisherRequestBrowser({ institutionId }) {
         emptyMessage="No publishers match this search."
       />
       <Pagination page={page} size={PAGE_SIZE} total={publishers.total} onPageChange={setPage} />
-    </section>
+    </Card>
   );
 }

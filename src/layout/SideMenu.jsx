@@ -16,12 +16,23 @@ import Icon from '../ui/Icon.jsx';
  */
 export const ENTRIES = [
   {
+    to: '/dashboard',
+    label: 'Dashboard',
+    icon: 'grid_view',
+    roles: null,
+  },
+  {
     to: '/publishers',
     label: 'Publishers',
     icon: 'menu_book',
     roles: ['SUPER_ADMIN', 'PUBLISHER_ADMIN'],
   },
-  { to: '/books', label: 'Books', icon: 'auto_stories', roles: ['SUPER_ADMIN', 'PUBLISHER_ADMIN'] },
+  {
+    to: '/books',
+    label: 'Catalogue items',
+    icon: 'auto_stories',
+    roles: ['SUPER_ADMIN', 'PUBLISHER_ADMIN'],
+  },
   {
     to: '/institutions',
     label: 'Institutions',
@@ -40,17 +51,17 @@ export const ENTRIES = [
     icon: 'verified_user',
     roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN'],
   },
-  { to: '/operators', label: 'Operators', icon: 'admin_panel_settings', roles: ['SUPER_ADMIN'] },
-  { to: '/audit', label: 'Audit log', icon: 'history', roles: ['SUPER_ADMIN'] },
+  { to: '/operators', label: 'Operators & Audit Log', icon: 'badge', roles: ['SUPER_ADMIN'] },
 ];
 
 // Where "/" sends a role the moment it signs in, and where NotAuthorized's "Go to Home" sends
-// it back to. Each value is that role's first entry above, spelled out rather than derived, so
-// the landing page does not silently change if the list is ever reordered.
+// it back to. The dashboard, for all three roles — it is the one screen built to adapt to
+// whichever scope is looking at it, rather than assuming SUPER_ADMIN and INSTITUTION_ADMIN want
+// different landing pages.
 const HOME_ROUTE = {
-  SUPER_ADMIN: '/publishers',
-  PUBLISHER_ADMIN: '/publishers',
-  INSTITUTION_ADMIN: '/institutions',
+  SUPER_ADMIN: '/dashboard',
+  PUBLISHER_ADMIN: '/dashboard',
+  INSTITUTION_ADMIN: '/dashboard',
 };
 
 export function homeRouteForRole(role) {
