@@ -1,12 +1,14 @@
-// The eleven error codes from wokay-api.yaml, plus KMS_UNAVAILABLE below, added ahead of the
-// contract for the multi-tenancy work: the backend does not return it yet, so this is the one
-// entry here that is anticipatory rather than a code already in wokay-api.yaml. A handler for
-// any other code not in this list is dead code.
+// The eleven error codes from wokay-api.yaml, plus FORBIDDEN_ROLE below: confirmed real
+// against the backend's own ErrorCode.java (the locally-checked contract copy just hadn't
+// caught up yet), and it's the only 403 the four tenant self-service endpoints
+// (api/tenants.js) ever return - never FORBIDDEN_SCOPE. A handler for any other code not in
+// this list is dead code.
 //
 // Switch on `code`, never on `message`. The message is written for a human and will change.
 export const ErrorCode = {
   UNAUTHENTICATED: 'UNAUTHENTICATED',
   FORBIDDEN_SCOPE: 'FORBIDDEN_SCOPE',
+  FORBIDDEN_ROLE: 'FORBIDDEN_ROLE',
   FORBIDDEN_INSTITUTION_MISMATCH: 'FORBIDDEN_INSTITUTION_MISMATCH',
   NO_ENTITLEMENT: 'NO_ENTITLEMENT',
   CONTENT_NOT_READY: 'CONTENT_NOT_READY',
@@ -16,7 +18,6 @@ export const ErrorCode = {
   TOO_MANY_IDS: 'TOO_MANY_IDS',
   VALIDATION_FAILED: 'VALIDATION_FAILED',
   STALE_VERSION: 'STALE_VERSION',
-  KMS_UNAVAILABLE: 'KMS_UNAVAILABLE',
 };
 
 // What an operator should see. The server's own message is often more specific, so we
@@ -24,6 +25,7 @@ export const ErrorCode = {
 const FRIENDLY = {
   UNAUTHENTICATED: 'Your session has ended. Please sign in again.',
   FORBIDDEN_SCOPE: 'You do not have permission to change this record.',
+  FORBIDDEN_ROLE: 'Your role does not allow this action.',
   FORBIDDEN_INSTITUTION_MISMATCH: 'That record belongs to a different institution.',
   NO_ENTITLEMENT: 'This institution is not entitled to that title.',
   CONTENT_NOT_READY: 'The file is still being processed. Try again shortly.',
@@ -33,7 +35,6 @@ const FRIENDLY = {
   TOO_MANY_IDS: 'Too many items requested at once. The limit is 100.',
   VALIDATION_FAILED: 'Some fields need fixing.',
   STALE_VERSION: 'Somebody else saved this first. Reload and reapply your change.',
-  KMS_UNAVAILABLE: "This publisher's encryption key isn't reachable right now.",
 };
 
 /**
