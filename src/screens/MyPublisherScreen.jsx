@@ -10,6 +10,8 @@ import { PublishersDecoration } from '../ui/pageDecorations.jsx';
 import PublisherCollections from './PublisherCollections.jsx';
 import { usePublisherAdminDashboard } from './usePublisherAdminDashboard.js';
 import DashboardLoadState from './DashboardLoadState.jsx';
+import PublisherDatabaseVaultSection from './PublisherDatabaseVaultSection.jsx';
+import { useAuth } from '../auth/AuthContext.jsx';
 
 function initialsOf(code) {
   return (code ?? '').slice(0, 3).toUpperCase();
@@ -25,6 +27,7 @@ function initialsOf(code) {
 export default function MyPublisherScreen({ publisherId }) {
   const { loading, error, data, reload } = usePublisherAdminDashboard(publisherId);
   const location = useLocation();
+  const { user } = useAuth();
 
   return (
     <div className="stack">
@@ -78,6 +81,12 @@ export default function MyPublisherScreen({ publisherId }) {
                 highlight: data.attentionTotal > 0,
               },
             ]}
+          />
+
+          <PublisherDatabaseVaultSection
+            publisherId={data.publisher.id}
+            canRead={user.role === 'SUPER_ADMIN'}
+            canWrite={user.role === 'SUPER_ADMIN' || user.scopePublisherId === data.publisher.id}
           />
 
           <div id="collections">
