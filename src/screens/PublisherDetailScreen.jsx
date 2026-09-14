@@ -7,6 +7,8 @@ import Card from '../ui/Card.jsx';
 import Button from '../ui/Button.jsx';
 import Icon from '../ui/Icon.jsx';
 import { getPublisher } from '../api/publishers.js';
+import { useAuth } from '../auth/AuthContext.jsx';
+import PublisherDatabaseVaultSection from './PublisherDatabaseVaultSection.jsx';
 
 // Same rule as the publishers table's row avatar: up to three letters from the code, since a
 // code is always present and short where a name is neither.
@@ -17,6 +19,7 @@ function initialsOf(code) {
 export default function PublisherDetailScreen() {
   const { publisherId } = useParams();
   const location = useLocation();
+  const { user } = useAuth();
 
   const [publisher, setPublisher] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -78,6 +81,11 @@ export default function PublisherDetailScreen() {
     return null;
   }
 
+  const canWrite =
+    user.role === 'SUPER_ADMIN' ||
+    (user.role === 'PUBLISHER_ADMIN' && user.scopePublisherId === publisher.id);
+  const canRead = user.role === 'SUPER_ADMIN';
+
   return (
     <div className="stack">
       <Card>
@@ -125,12 +133,7 @@ export default function PublisherDetailScreen() {
         <PublisherStatusActions publisher={publisher} onChanged={setPublisher} />
       </Card>
 
-      {/* Database & vault self-service (which database/key this publisher uses, and letting
-          its own admin or a SUPER_ADMIN change it) lives in PublisherDatabaseVaultSection, not
-          here - see api/tenants.js. Publisher itself (PublisherView.java on the backend) never
-          carries vaultRef/connectionHealth, despite wokay-api.yaml's Publisher schema still
-          documenting them - confirmed spec/code drift, flagged back, not something to read
-          speculatively from this record. */}
+      <PublisherDatabaseVaultSection publisherId={publisher.id} canRead={canRead} canWrite={canWrite} />
 
       <div id="collections">
         <PublisherCollections publisherId={publisher.id} />
