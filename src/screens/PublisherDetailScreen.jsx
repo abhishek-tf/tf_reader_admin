@@ -133,7 +133,11 @@ export default function PublisherDetailScreen() {
         <PublisherStatusActions publisher={publisher} onChanged={setPublisher} />
       </Card>
 
-      <PublisherDatabaseVaultSection publisherId={publisher.id} canRead={canRead} canWrite={canWrite} />
+      <PublisherDatabaseVaultSection
+        publisherId={publisher.id}
+        canRead={canRead}
+        canWrite={canWrite}
+      />
 
       <div id="collections">
         <PublisherCollections publisherId={publisher.id} />
