@@ -6,7 +6,11 @@ import { api, pageQuery } from './client.js';
 // Shapes, exactly as the contract defines them:
 //
 //   Publisher       { id, code, name, status, description?, logoUrl?, itemCount?,
-//                     collectionCount?, createdAt? }
+//                     collectionCount?, createdAt?, keyVaultRef?, keyVaultHealth? }
+//                     keyVaultRef/keyVaultHealth are ahead of the contract, for the
+//                     multi-tenancy migration - the backend does not send them yet, so
+//                     PublisherDetailScreen only shows its key-vault card once one of them
+//                     actually arrives.
 //   PublisherWrite  { code, name, description?, logoUrl? }        code and name required
 //   PublisherPage   { items: Publisher[], page, size, total }     page is ZERO based
 //   StatusChange    { status, reason? }                           reason is max 500 chars

@@ -1,5 +1,7 @@
-// The eleven error codes from wokay-api.yaml. There are no others, so a handler for a
-// code not in this list is dead code.
+// The eleven error codes from wokay-api.yaml, plus KMS_UNAVAILABLE below, added ahead of the
+// contract for the multi-tenancy work: the backend does not return it yet, so this is the one
+// entry here that is anticipatory rather than a code already in wokay-api.yaml. A handler for
+// any other code not in this list is dead code.
 //
 // Switch on `code`, never on `message`. The message is written for a human and will change.
 export const ErrorCode = {
@@ -14,6 +16,7 @@ export const ErrorCode = {
   TOO_MANY_IDS: 'TOO_MANY_IDS',
   VALIDATION_FAILED: 'VALIDATION_FAILED',
   STALE_VERSION: 'STALE_VERSION',
+  KMS_UNAVAILABLE: 'KMS_UNAVAILABLE',
 };
 
 // What an operator should see. The server's own message is often more specific, so we
@@ -30,6 +33,7 @@ const FRIENDLY = {
   TOO_MANY_IDS: 'Too many items requested at once. The limit is 100.',
   VALIDATION_FAILED: 'Some fields need fixing.',
   STALE_VERSION: 'Somebody else saved this first. Reload and reapply your change.',
+  KMS_UNAVAILABLE: "This publisher's encryption key isn't reachable right now.",
 };
 
 /**

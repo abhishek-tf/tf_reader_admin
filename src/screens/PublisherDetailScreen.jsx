@@ -125,6 +125,23 @@ export default function PublisherDetailScreen() {
         <PublisherStatusActions publisher={publisher} onChanged={setPublisher} />
       </Card>
 
+      {/* Ahead of the multi-tenancy migration: keyVaultRef/keyVaultHealth are not on the
+          contract yet, so this card renders only once the backend actually sends one of them.
+          Until then this is exactly the same page as before - no empty card, no placeholder
+          dashes. */}
+      {publisher.keyVaultRef || publisher.keyVaultHealth ? (
+        <Card>
+          <div className="detail-section-title">
+            <h2>
+              <Icon name="lock" style={{ marginRight: 6, verticalAlign: 'middle' }} />
+              Encryption key vault
+            </h2>
+          </div>
+          {publisher.keyVaultHealth ? <StatusBadge status={publisher.keyVaultHealth} /> : null}
+          {publisher.keyVaultRef ? <p className="muted small">{publisher.keyVaultRef}</p> : null}
+        </Card>
+      ) : null}
+
       <div id="collections">
         <PublisherCollections publisherId={publisher.id} />
       </div>

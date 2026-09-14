@@ -52,6 +52,7 @@ export const ENTRIES = [
     roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN'],
   },
   { to: '/operators', label: 'Operators & Audit Log', icon: 'badge', roles: ['SUPER_ADMIN'] },
+  { to: '/tenants', label: 'Tenants', icon: 'dns', roles: ['SUPER_ADMIN'] },
 ];
 
 // Where "/" sends a role the moment it signs in, and where NotAuthorized's "Go to Home" sends
