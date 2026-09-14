@@ -1,21 +1,17 @@
+import { Link } from 'react-router-dom';
 import StatusBadge from '../ui/StatusBadge.jsx';
 
-// Up to three letters for a tenant row's avatar chip, from its publisher code — same rule as
-// the Publishers table, since a tenant is really a publisher's own infrastructure record.
+// Up to three letters for a tenant row's avatar chip, from its publisher code - same rule as
+// the Publishers table.
 function initialsOf(code) {
   return (code ?? '').slice(0, 3).toUpperCase();
 }
 
-function formatDate(value) {
-  if (!value) return '—';
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? '—' : parsed.toLocaleDateString();
-}
-
 /**
- * Columns for the Tenants table. The backend has not shipped a Tenant shape yet (see
- * api/tenants.js), so every field here is read defensively with a `—` fallback — nothing on
- * this table should ever throw on a missing field, only show a dash for it.
+ * Columns for the Tenants table, against the real Tenant shape: { id, code, name, vaultRef,
+ * connectionHealth }. There is no mongoUri on this shape (the contract has no way to read a
+ * publisher's current connection string back - only whether one is configured, via
+ * connectionHealth), so this table shows health and "vault key configured", never a value.
  */
 export function buildTenantColumns() {
   return [
@@ -25,36 +21,26 @@ export function buildTenantColumns() {
       render: (row) => (
         <div className="table-entity">
           <span className="table-entity-avatar" aria-hidden="true">
-            {initialsOf(row.publisherCode)}
+            {initialsOf(row.code)}
           </span>
           <div className="table-entity-text">
-            <span className="row-link-emphasis">{row.publisherName ?? row.publisherId ?? '—'}</span>
-            {row.publisherCode ? (
-              <span className="table-entity-sub">{row.publisherCode}</span>
-            ) : null}
+            <Link className="row-link-emphasis" to={`/publishers/${row.id}`}>
+              {row.name}
+            </Link>
+            <span className="table-entity-sub">{row.code}</span>
           </div>
         </div>
       ),
     },
     {
-      key: 'databaseRef',
-      label: 'Database',
-      render: (row) => row.databaseRef ?? '—',
+      key: 'connectionHealth',
+      label: 'Database connection',
+      render: (row) => <StatusBadge status={row.connectionHealth} />,
     },
     {
-      key: 'region',
-      label: 'Region',
-      render: (row) => row.region ?? '—',
-    },
-    {
-      key: 'healthStatus',
-      label: 'Key vault health',
-      render: (row) => (row.healthStatus ? <StatusBadge status={row.healthStatus} /> : '—'),
-    },
-    {
-      key: 'createdAt',
-      label: 'Created',
-      render: (row) => formatDate(row.createdAt),
+      key: 'vaultRef',
+      label: 'Vault key',
+      render: (row) => (row.vaultRef ? 'Configured' : "T&F's shared key"),
     },
   ];
 }
