@@ -54,31 +54,27 @@ export default function PendingAssetSection({
           Current state: <IngestStateBadge state="NONE" />
         </p>
 
-        <label className="upload-dropzone" htmlFor="staged-content-file">
-          <Icon name="upload_file" style={{ fontSize: 28 }} />
-          <span className="upload-dropzone-text">
-            {contentFile ? (
-              contentFile.name
-            ) : (
-              <>
-                Drop a {contentType || 'content'} file here, or{' '}
-                <span className="upload-dropzone-browse">browse</span>
-              </>
-            )}
-          </span>
-          <p className="muted small">
-            Sent as {contentType || 'the chosen content type'}. Uploaded once the book is created.
-            Unlike the fields above, a chosen file is not kept if this page reloads - you would need
-            to choose it again.
-          </p>
-        </label>
-        <input
-          id="staged-content-file"
-          type="file"
-          className="file-input-hidden"
-          disabled={disabled}
-          onChange={handleContentChange}
-        />
+        {/* Same "Choose file" + filename pattern as the cover picker below, not the big
+            dropzone-as-label treatment this used to have - see the file-select crash report
+            this was changed to fix. */}
+        <div className="cover-upload-choose">
+          <label className="btn upload-choose-btn" htmlFor="staged-content-file">
+            Choose file
+          </label>
+          <input
+            id="staged-content-file"
+            type="file"
+            className="file-input-hidden"
+            disabled={disabled}
+            onChange={handleContentChange}
+          />
+          <span className="muted small">{contentFile ? contentFile.name : 'No file chosen'}</span>
+        </div>
+        <p className="muted small">
+          Sent as {contentType || 'the chosen content type'}. Uploaded once the book is created.
+          Unlike the fields above, a chosen file is not kept if this page reloads - you would need
+          to choose it again.
+        </p>
       </div>
 
       <div className="drawer-section">
