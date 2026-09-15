@@ -995,6 +995,20 @@ h2 {
 .field-required {
   color: var(--accent);
 }
+/* A caution ahead of a hard-to-reverse edit (switching a publisher's database or encryption
+   key) - amber rather than the red .field-error/.badge-REVOKED tone, since this isn't a
+   mistake to correct, just a consequence worth reading before continuing. */
+.callout-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius);
+  background: var(--saffron-neutral);
+  color: var(--carbon);
+  font-size: 13px;
+  margin: 0 0 var(--space-sm);
+}
 .input-group {
   position: relative;
 }

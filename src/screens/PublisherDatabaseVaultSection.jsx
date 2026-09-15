@@ -1,6 +1,4 @@
 import { useState } from 'react';
-import TextField from '../ui/TextField.jsx';
-import Button from '../ui/Button.jsx';
 import Card from '../ui/Card.jsx';
 import Icon from '../ui/Icon.jsx';
 import StatusBadge from '../ui/StatusBadge.jsx';
@@ -8,6 +6,7 @@ import { useToast } from '../ui/ToastContext.jsx';
 import { isValid32ByteKey } from './tenantVaultKeyValidation.js';
 import { useTenantSelfService } from './useTenantSelfService.js';
 import TenantConfirmModal from './TenantConfirmModal.jsx';
+import TenantField from './TenantField.jsx';
 
 // Split out of the main component purely to keep its own branching (loading/error/tenant) from
 // adding to PublisherDatabaseVaultSection's own complexity count. No "not shown here" case
@@ -53,11 +52,19 @@ export default function PublisherDatabaseVaultSection({ publisherId, canAccess }
 
   const [mongoUri, setMongoUri] = useState('');
   const [mongoError, setMongoError] = useState(null);
+  const [databaseEditing, setDatabaseEditing] = useState(false);
   const [keyBase64, setKeyBase64] = useState('');
   const [keyError, setKeyError] = useState(null);
+  const [vaultKeyEditing, setVaultKeyEditing] = useState(false);
   const [confirm, setConfirm] = useState(null); // { kind, isRevert, value }
 
   if (!canAccess) return null;
+
+  // Nothing to protect against overwriting until a tenant has actually loaded and says so -
+  // while that's still pending (or failed), the plain input is the safe default, same as
+  // before this ever had a "collapsed" state at all.
+  const databaseConfigured = tenant ? tenant.connectionHealth !== 'NOT_CONFIGURED' : false;
+  const vaultKeyConfigured = Boolean(tenant?.vaultRef);
 
   function changeMongoUri(_name, value) {
     setMongoUri(value);
@@ -66,6 +73,18 @@ export default function PublisherDatabaseVaultSection({ publisherId, canAccess }
 
   function changeKeyBase64(_name, value) {
     setKeyBase64(value);
+    setKeyError(null);
+  }
+
+  function cancelDatabaseEdit() {
+    setDatabaseEditing(false);
+    setMongoUri('');
+    setMongoError(null);
+  }
+
+  function cancelVaultKeyEdit() {
+    setVaultKeyEditing(false);
+    setKeyBase64('');
     setKeyError(null);
   }
 
@@ -100,11 +119,11 @@ export default function PublisherDatabaseVaultSection({ publisherId, canAccess }
     try {
       if (kind === 'database') {
         await saveDatabase(value);
-        setMongoUri('');
+        cancelDatabaseEdit();
         toast.saved(value ? 'Database updated.' : 'Reverted to the shared database.');
       } else {
         await saveVaultKey(value);
-        setKeyBase64('');
+        cancelVaultKeyEdit();
         toast.saved(value ? 'Encryption key updated.' : "Reverted to T&F's shared key.");
       }
       setConfirm(null);
@@ -130,45 +149,55 @@ export default function PublisherDatabaseVaultSection({ publisherId, canAccess }
           controls are allowed. */}
       <div className="stack">
         <div>
-          <TextField
-            label="Dedicated MongoDB connection string"
-            name="mongoUri"
-            value={mongoUri}
-            onChange={changeMongoUri}
-            error={mongoError}
-            placeholder="mongodb+srv://..."
-            disabled={savingDatabase}
-            hint="Switching does not migrate existing data - you'll be asked to confirm before this takes effect."
+          <p className="field-label">Dedicated MongoDB connection string</p>
+          <TenantField
+            configured={databaseConfigured}
+            editing={databaseEditing}
+            onStartEdit={() => setDatabaseEditing(true)}
+            onCancelEdit={cancelDatabaseEdit}
+            saving={savingDatabase}
+            warning="Switching does not migrate existing data - anything already saved under the current connection stays there and becomes invisible through this publisher once this change is saved."
+            textFieldProps={{
+              label: 'New connection string',
+              name: 'mongoUri',
+              value: mongoUri,
+              onChange: changeMongoUri,
+              error: mongoError,
+              placeholder: 'mongodb+srv://...',
+              hint: "You'll be asked to confirm before this takes effect.",
+              compact: true,
+            }}
+            onSet={handleSetDatabase}
+            setLabel="Set database"
+            onRevert={handleRevertDatabase}
+            revertLabel="Revert to shared database"
           />
-          <div className="row-buttons">
-            <Button variant="primary" onClick={handleSetDatabase} disabled={savingDatabase}>
-              {savingDatabase ? 'Saving...' : 'Set database'}
-            </Button>
-            <Button onClick={handleRevertDatabase} disabled={savingDatabase}>
-              Revert to shared database
-            </Button>
-          </div>
         </div>
 
         <div>
-          <TextField
-            label="Encryption key (base64, 256-bit)"
-            name="keyBase64"
-            value={keyBase64}
-            onChange={changeKeyBase64}
-            error={keyError}
-            placeholder="44-character base64 string"
-            disabled={savingVaultKey}
-            hint="Never shown again once saved. Changing or clearing it makes anything encrypted with the old key unreadable."
+          <p className="field-label">Encryption key (base64, 256-bit)</p>
+          <TenantField
+            configured={vaultKeyConfigured}
+            editing={vaultKeyEditing}
+            onStartEdit={() => setVaultKeyEditing(true)}
+            onCancelEdit={cancelVaultKeyEdit}
+            saving={savingVaultKey}
+            warning="Changing or clearing this key makes anything already encrypted with the current one unreadable - this cannot be undone."
+            textFieldProps={{
+              label: 'New encryption key',
+              name: 'keyBase64',
+              value: keyBase64,
+              onChange: changeKeyBase64,
+              error: keyError,
+              placeholder: '44-character base64 string',
+              hint: 'Never shown again once saved.',
+              compact: true,
+            }}
+            onSet={handleSetVaultKey}
+            setLabel="Set key"
+            onRevert={handleRevertVaultKey}
+            revertLabel="Revert to shared key"
           />
-          <div className="row-buttons">
-            <Button variant="primary" onClick={handleSetVaultKey} disabled={savingVaultKey}>
-              {savingVaultKey ? 'Saving...' : 'Set key'}
-            </Button>
-            <Button onClick={handleRevertVaultKey} disabled={savingVaultKey}>
-              Revert to shared key
-            </Button>
-          </div>
         </div>
       </div>
 
