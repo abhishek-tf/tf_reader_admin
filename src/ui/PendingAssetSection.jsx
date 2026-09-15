@@ -68,6 +68,8 @@ export default function PendingAssetSection({
           </span>
           <p className="muted small">
             Sent as {contentType || 'the chosen content type'}. Uploaded once the book is created.
+            Unlike the fields above, a chosen file is not kept if this page reloads - you would need
+            to choose it again.
           </p>
         </label>
         <input
@@ -87,7 +89,9 @@ export default function PendingAssetSection({
           </div>
           <div className="cover-upload-body">
             <span className="cover-upload-title">Upload cover image</span>
-            <p className="muted small">JPEG, PNG or WebP, up to 5 MB.</p>
+            <p className="muted small">
+              JPEG, PNG or WebP, up to 5 MB. Not kept if this page reloads.
+            </p>
             <div className="cover-upload-choose">
               <label className="btn upload-choose-btn" htmlFor="staged-cover-file">
                 Choose file
