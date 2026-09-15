@@ -27,6 +27,13 @@ export default class RouteErrorBoundary extends Component {
     return { error };
   }
 
+  // Without this, a caught error left no trace anywhere - the fallback below would render,
+  // but the browser console would stay silent, which is exactly backwards for the one place in
+  // this app whose whole job is telling someone a crash happened.
+  componentDidCatch(error, info) {
+    console.error('RouteErrorBoundary caught:', error, info.componentStack);
+  }
+
   componentDidUpdate(prevProps) {
     if (prevProps.resetKey !== this.props.resetKey && this.state.error) {
       this.setState({ error: null });

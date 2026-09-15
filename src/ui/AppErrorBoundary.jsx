@@ -21,6 +21,12 @@ export default class AppErrorBoundary extends Component {
     return { error };
   }
 
+  // Same reasoning as RouteErrorBoundary's own componentDidCatch: without this, a caught error
+  // leaves no trace anywhere in the console, which defeats the point of catching it at all.
+  componentDidCatch(error, info) {
+    console.error('AppErrorBoundary caught:', error, info.componentStack);
+  }
+
   render() {
     if (!this.state.error) return this.props.children;
 
