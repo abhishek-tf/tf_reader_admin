@@ -23,6 +23,12 @@ import { buildCatalogueTree, flattenVisible } from './bookTree.js';
  * the Books page does (`bookTree.js`), collapsed by default, so a Journal reachable through one
  * grant shows as one row with its Volumes/Issues/Articles nested under it, not as unrelated
  * flat siblings.
+ *
+ * `unresolvedItemCount` is reported separately from `booksError`: `GET /catalogue-items/{id}`
+ * has no INSTITUTION_ADMIN case on the backend today, so every ITEM-scoped grant fails there
+ * every time - a known, permanent gap, not the kind of transient failure `booksError` is for.
+ * Folding the two together used to mean one ITEM-scoped grant blanked out every book this
+ * institution could otherwise see through its PUBLISHER/COLLECTION grants too.
  */
 export function useInstitutionEntitlements(institutionId) {
   const [entitlements, setEntitlements] = useState([]);
@@ -31,6 +37,9 @@ export function useInstitutionEntitlements(institutionId) {
   const [books, setBooks] = useState([]);
   const [loadingBooks, setLoadingBooks] = useState(false);
   const [booksError, setBooksError] = useState(null);
+  // How many ITEM-scoped entitlements' books could not be fetched - see the comment where this
+  // is set, below. Zero unless there is at least one ITEM-scoped ACTIVE entitlement.
+  const [unresolvedItemCount, setUnresolvedItemCount] = useState(0);
   const [expandedIds, setExpandedIds] = useState(() => new Set());
   const [reloadCount, setReloadCount] = useState(0);
 
@@ -51,6 +60,7 @@ export function useInstitutionEntitlements(institutionId) {
     setEntitlementsError(null);
     setBooksError(null);
     setBooks([]);
+    setUnresolvedItemCount(0);
 
     fetchAllPages((page) => listEntitlements(institutionId, { page, size: 100 }))
       .then(async (loaded) => {
@@ -68,14 +78,20 @@ export function useInstitutionEntitlements(institutionId) {
           ...new Set(active.filter((e) => e.scopeType === 'COLLECTION').map((e) => e.scopeId)),
         ];
 
-        // Each lookup's own failure is recorded rather than swallowed into null/[] - a failed
-        // fetch should surface as an error, not read as "this institution has no books".
-        let anyFailed = false;
+        // ITEM-scoped and PUBLISHER/COLLECTION-scoped lookups fail for different reasons and
+        // are reported separately, not folded into one flag: GET /catalogue-items/{id} has no
+        // INSTITUTION_ADMIN case on the backend at all today, so every ITEM-scoped entitlement
+        // 403s every time, permanently - that is not the same kind of failure as a genuine,
+        // possibly-transient error resolving a PUBLISHER/COLLECTION grant, and treating them
+        // the same wiped out the whole books table (including everything that DID resolve)
+        // over one entitlement type that can never succeed yet.
+        let anyOtherFailed = false;
+        let failedItemLookups = 0;
         const [fromItems, fromPublishers, fromCollections] = await Promise.all([
           Promise.all(
             itemIds.map((id) =>
               getCatalogueItem(id).catch(() => {
-                anyFailed = true;
+                failedItemLookups += 1;
                 return null;
               })
             )
@@ -84,7 +100,7 @@ export function useInstitutionEntitlements(institutionId) {
             publisherIds.map((publisherId) =>
               fetchAllPages((page) => listCatalogueItems({ publisherId, page, size: 100 })).catch(
                 () => {
-                  anyFailed = true;
+                  anyOtherFailed = true;
                   return [];
                 }
               )
@@ -92,20 +108,24 @@ export function useInstitutionEntitlements(institutionId) {
           ),
           Promise.all(
             collectionIds.map((collectionId) =>
-              fetchAllPages((page) =>
-                listCatalogueItems({ collectionId, page, size: 100 })
-              ).catch(() => {
-                anyFailed = true;
-                return [];
-              })
+              fetchAllPages((page) => listCatalogueItems({ collectionId, page, size: 100 })).catch(
+                () => {
+                  anyOtherFailed = true;
+                  return [];
+                }
+              )
             )
           ),
         ]);
 
         if (cancelled) return;
 
-        if (anyFailed) {
-          setBooksError(new Error("Could not load every book behind this institution's entitlements."));
+        setUnresolvedItemCount(failedItemLookups);
+
+        if (anyOtherFailed) {
+          setBooksError(
+            new Error("Could not load every book behind this institution's entitlements.")
+          );
           setLoadingBooks(false);
           return;
         }
@@ -153,6 +173,7 @@ export function useInstitutionEntitlements(institutionId) {
     books,
     loadingBooks,
     booksError,
+    unresolvedItemCount,
     toggleExpand,
     reload,
   };

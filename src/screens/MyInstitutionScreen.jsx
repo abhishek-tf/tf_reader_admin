@@ -113,6 +113,14 @@ export default function MyInstitutionScreen({ institutionId }) {
             <div className="detail-section-title">
               <h2>Items you're entitled to</h2>
             </div>
+            {entitlements.unresolvedItemCount > 0 ? (
+              <p className="muted small">
+                {entitlements.unresolvedItemCount} item-level entitlement
+                {entitlements.unresolvedItemCount === 1 ? '' : 's'} can&apos;t be shown here yet -
+                ask the platform team to check on this. Books reached through a publisher or
+                collection grant are unaffected and still listed below.
+              </p>
+            ) : null}
             <DataTable
               columns={getColumns(entitlements.toggleExpand)}
               rows={entitlements.books}
