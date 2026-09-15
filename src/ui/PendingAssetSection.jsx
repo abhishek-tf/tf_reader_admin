@@ -1,5 +1,6 @@
 import Icon from './Icon.jsx';
 import IngestStateBadge from './IngestStateBadge.jsx';
+import { useToast } from './ToastContext.jsx';
 
 /**
  * The content file and cover picked before a book exists to upload them to — Stitch's own
@@ -23,6 +24,28 @@ export default function PendingAssetSection({
   onChangeCover,
   disabled,
 }) {
+  const toast = useToast();
+
+  // Belt and suspenders around a plain "stash the File object" call: neither handler is
+  // expected to throw on a normal file selection, but a raw <input type="file"> onChange
+  // sits outside React's own render cycle, so an unexpected failure here has nowhere else to
+  // go. Surfacing it as a toast beats leaving the operator on a stuck, unresponsive picker.
+  function handleContentChange(event) {
+    try {
+      onChangeContent(event.target.files?.[0] ?? null);
+    } catch (error) {
+      toast.failed(error, 'Could not use that file. Try choosing it again.');
+    }
+  }
+
+  function handleCoverChange(event) {
+    try {
+      onChangeCover(event.target.files?.[0] ?? null);
+    } catch (error) {
+      toast.failed(error, 'Could not use that file. Try choosing it again.');
+    }
+  }
+
   return (
     <>
       <div className="drawer-section">
@@ -53,7 +76,7 @@ export default function PendingAssetSection({
           type="file"
           className="file-input-hidden"
           disabled={disabled}
-          onChange={(event) => onChangeContent(event.target.files?.[0] ?? null)}
+          onChange={handleContentChange}
         />
       </div>
 
@@ -76,7 +99,7 @@ export default function PendingAssetSection({
                 accept="image/*"
                 className="file-input-hidden"
                 disabled={disabled}
-                onChange={(event) => onChangeCover(event.target.files?.[0] ?? null)}
+                onChange={handleCoverChange}
               />
               <span className="muted small">{coverFile ? coverFile.name : 'No file chosen'}</span>
             </div>
