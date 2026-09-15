@@ -21,15 +21,11 @@ export const STATUS_OPTIONS = [
 // simply never listed here rather than shown disabled. `section` is presentation grouping
 // only ('imprint' | 'rights' | 'bibliographic') — it groups the drawer's field blocks and
 // does not touch validation, payload shape or ordering below.
+// publisherId is deliberately not in this list: BookForm.jsx renders it itself, as a
+// role-aware picker (a dropdown for SUPER_ADMIN, locked to the signed-in admin's own publisher
+// for PUBLISHER_ADMIN) rather than a free-text box anyone could type any id into. validate()
+// below still checks it the same way regardless of which UI produced the value.
 export const FIELDS = [
-  {
-    name: 'publisherId',
-    label: 'Publisher ID',
-    kind: 'text',
-    placeholder: 'pub_rtlg',
-    required: true,
-    section: 'imprint',
-  },
   {
     name: 'contentType',
     label: 'Content type',
