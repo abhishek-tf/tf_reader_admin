@@ -11,24 +11,33 @@ import TenantConfirmModal from './TenantConfirmModal.jsx';
 
 // Split out of the main component purely to keep its own branching (loading/error/tenant/
 // no-read-access) from adding to PublisherDatabaseVaultSection's own complexity count.
+//
+// `tenant` is checked first, before `canRead`: a PUBLISHER_ADMIN can never fetch it via GET
+// (SUPER_ADMIN only), but setDatabase/setVaultKey both return the full updated Tenant to
+// whoever called them, self-service included - so the moment either save succeeds, `tenant`
+// is populated regardless of `canRead`, and that result must actually be shown, not hidden
+// behind the same "can't look this up" message that applies before any save has happened.
 function CurrentStatus({ canRead, loading, error, tenant }) {
+  if (tenant) {
+    return (
+      <p>
+        Database connection: <StatusBadge status={tenant.connectionHealth} /> &nbsp;&middot;&nbsp;
+        Encryption key: {tenant.vaultRef ? 'Configured' : "T&F's shared key"}
+      </p>
+    );
+  }
   if (!canRead) {
     return (
       <p className="muted small">
-        Current status isn&apos;t shown here - only a SUPER_ADMIN can look up a publisher&apos;s
-        tenant status. Saving below still applies immediately either way.
+        Current status isn&apos;t shown until you save below - only a SUPER_ADMIN can look up a
+        publisher&apos;s tenant status ahead of time. Once you set a database or key here, the
+        result of that save shows above.
       </p>
     );
   }
   if (loading) return <p className="muted">Loading current status...</p>;
   if (error) return <p className="muted">{error.friendly}</p>;
-  if (!tenant) return null;
-  return (
-    <p>
-      Database connection: <StatusBadge status={tenant.connectionHealth} /> &nbsp;&middot;&nbsp;
-      Encryption key: {tenant.vaultRef ? 'Configured' : "T&F's shared key"}
-    </p>
-  );
+  return null;
 }
 
 /**
