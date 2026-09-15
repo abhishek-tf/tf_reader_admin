@@ -22,10 +22,11 @@ import { api } from './client.js';
 //                           Despite the name, this reflects the DATABASE connection's health,
 //                           not the vault's - a known naming mismatch in the contract.
 //
-// listTenants/getTenant are SUPER_ADMIN only - no self-service carve-out for either GET. The
-// two PUT calls are self-service: that publisher's own PUBLISHER_ADMIN, or any SUPER_ADMIN.
-// Every 403 from any of these four endpoints is FORBIDDEN_ROLE, never FORBIDDEN_SCOPE. The
-// server enforces all of this; nothing here does.
+// listTenants is SUPER_ADMIN only - enumerating every publisher is a platform-wide view, not a
+// self-service one. getTenant is self-service, same rule as the two PUT calls below: that
+// publisher's own PUBLISHER_ADMIN, or any SUPER_ADMIN. Every 403 from any of these four
+// endpoints is FORBIDDEN_ROLE, never FORBIDDEN_SCOPE. The server enforces all of this; nothing
+// here does.
 const BASE = '/tenants';
 
 /** Every tenant, unpaged, unfiltered - the endpoint takes no parameters. SUPER_ADMIN only. */
@@ -33,7 +34,10 @@ export function listTenants() {
   return api.get(BASE);
 }
 
-/** One tenant by publisher id. SUPER_ADMIN only. 404 NOT_FOUND if it doesn't exist. */
+/**
+ * One tenant by publisher id. Self-service: that publisher's own PUBLISHER_ADMIN, or any
+ * SUPER_ADMIN. 404 NOT_FOUND if it doesn't exist.
+ */
 export function getTenant(publisherId) {
   return api.get(`${BASE}/${publisherId}`);
 }

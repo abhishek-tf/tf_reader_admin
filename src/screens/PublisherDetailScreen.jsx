@@ -81,10 +81,10 @@ export default function PublisherDetailScreen() {
     return null;
   }
 
-  const canWrite =
+  // Reading and writing a publisher's tenant record share the same rule on the backend now.
+  const canAccessTenant =
     user.role === 'SUPER_ADMIN' ||
     (user.role === 'PUBLISHER_ADMIN' && user.scopePublisherId === publisher.id);
-  const canRead = user.role === 'SUPER_ADMIN';
 
   return (
     <div className="stack">
@@ -133,11 +133,7 @@ export default function PublisherDetailScreen() {
         <PublisherStatusActions publisher={publisher} onChanged={setPublisher} />
       </Card>
 
-      <PublisherDatabaseVaultSection
-        publisherId={publisher.id}
-        canRead={canRead}
-        canWrite={canWrite}
-      />
+      <PublisherDatabaseVaultSection publisherId={publisher.id} canAccess={canAccessTenant} />
 
       <div id="collections">
         <PublisherCollections publisherId={publisher.id} />

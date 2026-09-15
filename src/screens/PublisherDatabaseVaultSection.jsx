@@ -9,29 +9,16 @@ import { isValid32ByteKey } from './tenantVaultKeyValidation.js';
 import { useTenantSelfService } from './useTenantSelfService.js';
 import TenantConfirmModal from './TenantConfirmModal.jsx';
 
-// Split out of the main component purely to keep its own branching (loading/error/tenant/
-// no-read-access) from adding to PublisherDatabaseVaultSection's own complexity count.
-//
-// `tenant` is checked first, before `canRead`: a PUBLISHER_ADMIN can never fetch it via GET
-// (SUPER_ADMIN only), but setDatabase/setVaultKey both return the full updated Tenant to
-// whoever called them, self-service included - so the moment either save succeeds, `tenant`
-// is populated regardless of `canRead`, and that result must actually be shown, not hidden
-// behind the same "can't look this up" message that applies before any save has happened.
-function CurrentStatus({ canRead, loading, error, tenant }) {
+// Split out of the main component purely to keep its own branching (loading/error/tenant) from
+// adding to PublisherDatabaseVaultSection's own complexity count. No "not shown here" case
+// remains: reading and writing a tenant now share the exact same access rule on the backend, so
+// whoever can see this section at all can also see its current status.
+function CurrentStatus({ loading, error, tenant }) {
   if (tenant) {
     return (
       <p>
         Database connection: <StatusBadge status={tenant.connectionHealth} /> &nbsp;&middot;&nbsp;
         Encryption key: {tenant.vaultRef ? 'Configured' : "T&F's shared key"}
-      </p>
-    );
-  }
-  if (!canRead) {
-    return (
-      <p className="muted small">
-        Current status isn&apos;t shown until you save below - only a SUPER_ADMIN can look up a
-        publisher&apos;s tenant status ahead of time. Once you set a database or key here, the
-        result of that save shows above.
       </p>
     );
   }
@@ -47,20 +34,16 @@ function CurrentStatus({ canRead, loading, error, tenant }) {
  * screen shares a route with the other, so this component, not a route, is what makes sure a
  * PUBLISHER_ADMIN actually encounters these controls in their normal flow.
  *
- * `canWrite` decides whether the two PUT actions render at all: true for any SUPER_ADMIN, and
- * for a PUBLISHER_ADMIN only when `publisherId` is their own scope. The server enforces the
- * real check on every PUT regardless (FORBIDDEN_ROLE otherwise) - this only avoids dangling a
- * control in front of someone who would just get a 403.
- *
- * `canRead` (SUPER_ADMIN only - GET /tenants/{id} has no self-service carve-out) decides
- * whether current connectionHealth/vaultRef are fetched and shown before any write. A
- * PUBLISHER_ADMIN never sees a "current status" here, only the write forms, until their own
- * first successful save populates it for the rest of that session.
+ * `canAccess` gates everything here - reading the current status and both PUT actions - because
+ * the backend now uses the exact same rule for all three: true for any SUPER_ADMIN, and for a
+ * PUBLISHER_ADMIN only when `publisherId` is their own scope. The server enforces the real check
+ * regardless (FORBIDDEN_ROLE otherwise) - this only avoids dangling controls, or a doomed fetch,
+ * in front of someone who would just get a 403.
  */
-export default function PublisherDatabaseVaultSection({ publisherId, canRead, canWrite }) {
+export default function PublisherDatabaseVaultSection({ publisherId, canAccess }) {
   const toast = useToast();
   const { tenant, loading, error, savingDatabase, savingVaultKey, saveDatabase, saveVaultKey } =
-    useTenantSelfService(publisherId, canRead);
+    useTenantSelfService(publisherId, canAccess);
 
   const [mongoUri, setMongoUri] = useState('');
   const [mongoError, setMongoError] = useState(null);
@@ -68,7 +51,7 @@ export default function PublisherDatabaseVaultSection({ publisherId, canRead, ca
   const [keyError, setKeyError] = useState(null);
   const [confirm, setConfirm] = useState(null); // { kind, isRevert, value }
 
-  if (!canRead && !canWrite) return null;
+  if (!canAccess) return null;
 
   function changeMongoUri(_name, value) {
     setMongoUri(value);
@@ -134,53 +117,54 @@ export default function PublisherDatabaseVaultSection({ publisherId, canRead, ca
         </h2>
       </div>
 
-      <CurrentStatus canRead={canRead} loading={loading} error={error} tenant={tenant} />
+      <CurrentStatus loading={loading} error={error} tenant={tenant} />
 
-      {canWrite ? (
-        <div className="stack">
-          <div>
-            <TextField
-              label="Dedicated MongoDB connection string"
-              name="mongoUri"
-              value={mongoUri}
-              onChange={changeMongoUri}
-              error={mongoError}
-              placeholder="mongodb+srv://..."
-              disabled={savingDatabase}
-              hint="Switching does not migrate existing data - you'll be asked to confirm before this takes effect."
-            />
-            <div className="row-buttons">
-              <Button variant="primary" onClick={handleSetDatabase} disabled={savingDatabase}>
-                {savingDatabase ? 'Saving...' : 'Set database'}
-              </Button>
-              <Button onClick={handleRevertDatabase} disabled={savingDatabase}>
-                Revert to shared database
-              </Button>
-            </div>
-          </div>
-
-          <div>
-            <TextField
-              label="Encryption key (base64, 256-bit)"
-              name="keyBase64"
-              value={keyBase64}
-              onChange={changeKeyBase64}
-              error={keyError}
-              placeholder="44-character base64 string"
-              disabled={savingVaultKey}
-              hint="Never shown again once saved. Changing or clearing it makes anything encrypted with the old key unreadable."
-            />
-            <div className="row-buttons">
-              <Button variant="primary" onClick={handleSetVaultKey} disabled={savingVaultKey}>
-                {savingVaultKey ? 'Saving...' : 'Set key'}
-              </Button>
-              <Button onClick={handleRevertVaultKey} disabled={savingVaultKey}>
-                Revert to shared key
-              </Button>
-            </div>
+      {/* No canAccess check needed here: the component itself already returned null above
+          when it's false, so reaching this point means both the status above and these
+          controls are allowed. */}
+      <div className="stack">
+        <div>
+          <TextField
+            label="Dedicated MongoDB connection string"
+            name="mongoUri"
+            value={mongoUri}
+            onChange={changeMongoUri}
+            error={mongoError}
+            placeholder="mongodb+srv://..."
+            disabled={savingDatabase}
+            hint="Switching does not migrate existing data - you'll be asked to confirm before this takes effect."
+          />
+          <div className="row-buttons">
+            <Button variant="primary" onClick={handleSetDatabase} disabled={savingDatabase}>
+              {savingDatabase ? 'Saving...' : 'Set database'}
+            </Button>
+            <Button onClick={handleRevertDatabase} disabled={savingDatabase}>
+              Revert to shared database
+            </Button>
           </div>
         </div>
-      ) : null}
+
+        <div>
+          <TextField
+            label="Encryption key (base64, 256-bit)"
+            name="keyBase64"
+            value={keyBase64}
+            onChange={changeKeyBase64}
+            error={keyError}
+            placeholder="44-character base64 string"
+            disabled={savingVaultKey}
+            hint="Never shown again once saved. Changing or clearing it makes anything encrypted with the old key unreadable."
+          />
+          <div className="row-buttons">
+            <Button variant="primary" onClick={handleSetVaultKey} disabled={savingVaultKey}>
+              {savingVaultKey ? 'Saving...' : 'Set key'}
+            </Button>
+            <Button onClick={handleRevertVaultKey} disabled={savingVaultKey}>
+              Revert to shared key
+            </Button>
+          </div>
+        </div>
+      </div>
 
       <TenantConfirmModal
         confirm={confirm}

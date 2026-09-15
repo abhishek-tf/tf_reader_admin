@@ -85,8 +85,7 @@ export default function MyPublisherScreen({ publisherId }) {
 
           <PublisherDatabaseVaultSection
             publisherId={data.publisher.id}
-            canRead={user.role === 'SUPER_ADMIN'}
-            canWrite={user.role === 'SUPER_ADMIN' || user.scopePublisherId === data.publisher.id}
+            canAccess={user.role === 'SUPER_ADMIN' || user.scopePublisherId === data.publisher.id}
           />
 
           <div id="collections">

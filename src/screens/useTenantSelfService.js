@@ -2,23 +2,20 @@ import { useCallback, useEffect, useState } from 'react';
 import { getTenant, setTenantDatabase, setTenantVaultKey } from '../api/tenants.js';
 
 /**
- * Backs PublisherDatabaseVaultSection. `canRead` is deliberately separate from whether the
- * caller may write: GET /tenants/{id} is SUPER_ADMIN only, with no self-service carve-out, so a
- * PUBLISHER_ADMIN calling it always 403s. Rather than attempt-and-catch a guaranteed, expected
- * failure, this hook simply never calls getTenant when `canRead` is false. For that caller,
- * `tenant` starts and stays null until their own first successful PUT response populates it
- * locally for the rest of the session - there is no way to show "current status" before that,
- * and that gap is a real backend limitation (no self-service GET), not a bug here.
+ * Backs PublisherDatabaseVaultSection. `GET /tenants/{id}` and the two `PUT` self-service
+ * endpoints now share the exact same access rule on the backend (that publisher's own
+ * PUBLISHER_ADMIN, or any SUPER_ADMIN) - so `canAccess` gates both fetching and writing here,
+ * with nothing left to fetch when the caller isn't allowed to see it in the first place.
  */
-export function useTenantSelfService(publisherId, canRead) {
+export function useTenantSelfService(publisherId, canAccess) {
   const [tenant, setTenant] = useState(null);
-  const [loading, setLoading] = useState(canRead);
+  const [loading, setLoading] = useState(canAccess);
   const [error, setError] = useState(null);
   const [savingDatabase, setSavingDatabase] = useState(false);
   const [savingVaultKey, setSavingVaultKey] = useState(false);
 
   useEffect(() => {
-    if (!canRead) return undefined;
+    if (!canAccess) return undefined;
     let cancelled = false;
     setLoading(true);
     setError(null);
@@ -35,7 +32,7 @@ export function useTenantSelfService(publisherId, canRead) {
     return () => {
       cancelled = true;
     };
-  }, [publisherId, canRead]);
+  }, [publisherId, canAccess]);
 
   const saveDatabase = useCallback(
     async (mongoUri) => {
