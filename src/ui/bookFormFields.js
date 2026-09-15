@@ -42,9 +42,22 @@ export const FIELDS = [
     required: true,
     section: 'imprint',
   },
-  { name: 'title', label: 'Title', kind: 'text', maxLength: 300, required: true, section: 'bibliographic' },
+  {
+    name: 'title',
+    label: 'Title',
+    kind: 'text',
+    maxLength: 300,
+    required: true,
+    section: 'bibliographic',
+  },
   { name: 'subtitle', label: 'Subtitle', kind: 'text', maxLength: 300, section: 'bibliographic' },
-  { name: 'authors', label: 'Authors', kind: 'text', hint: 'Comma separated.', section: 'bibliographic' },
+  {
+    name: 'authors',
+    label: 'Authors',
+    kind: 'text',
+    hint: 'Comma separated.',
+    section: 'bibliographic',
+  },
   {
     name: 'editors',
     label: 'Editors',
@@ -77,7 +90,13 @@ export const FIELDS = [
     required: (form) => form.contentType === 'AUDIO',
     section: 'bibliographic',
   },
-  { name: 'subjects', label: 'Subjects', kind: 'text', hint: 'Comma separated.', section: 'bibliographic' },
+  {
+    name: 'subjects',
+    label: 'Subjects',
+    kind: 'text',
+    hint: 'Comma separated.',
+    section: 'bibliographic',
+  },
   {
     name: 'language',
     label: 'Language',
@@ -101,8 +120,20 @@ export const FIELDS = [
     inputType: 'date',
     section: 'bibliographic',
   },
-  { name: 'coverUrl', label: 'Cover URL', kind: 'text', inputType: 'url', section: 'bibliographic' },
-  { name: 'status', label: 'Status', kind: 'select', options: STATUS_OPTIONS, section: 'bibliographic' },
+  {
+    name: 'coverUrl',
+    label: 'Cover URL',
+    kind: 'text',
+    inputType: 'url',
+    section: 'bibliographic',
+  },
+  {
+    name: 'status',
+    label: 'Status',
+    kind: 'select',
+    options: STATUS_OPTIONS,
+    section: 'bibliographic',
+  },
 ];
 
 const ISBN_PATTERN = /^(97[89])?[0-9]{9}[0-9X]$/;

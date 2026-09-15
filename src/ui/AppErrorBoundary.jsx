@@ -32,8 +32,8 @@ export default class AppErrorBoundary extends Component {
           </div>
           <div className="modal-body">
             <p className="muted">
-              The console hit an error it couldn&apos;t recover from. Reloading is safe -
-              nothing is lost that wasn&apos;t already saved.
+              The console hit an error it couldn&apos;t recover from. Reloading is safe - nothing is
+              lost that wasn&apos;t already saved.
             </p>
           </div>
           <div className="modal-footer">

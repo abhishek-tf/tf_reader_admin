@@ -99,7 +99,8 @@ export default function BookForm({ initialItem, onSaved, onCancel }) {
 
   // Cleared automatically once nothing has changed from what the form started with, so closing
   // an untouched or already-saved form never prompts.
-  const isDirty = JSON.stringify(form) !== initialFormSnapshot || Boolean(stagedContent) || Boolean(stagedCover);
+  const isDirty =
+    JSON.stringify(form) !== initialFormSnapshot || Boolean(stagedContent) || Boolean(stagedCover);
   useBeforeUnloadWarning(isDirty || saving);
 
   function change(name, value) {

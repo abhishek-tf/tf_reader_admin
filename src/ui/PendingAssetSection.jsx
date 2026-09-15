@@ -67,8 +67,7 @@ export default function PendingAssetSection({
             )}
           </span>
           <p className="muted small">
-            Sent as {contentType || 'the chosen content type'}. Uploaded once the book is
-            created.
+            Sent as {contentType || 'the chosen content type'}. Uploaded once the book is created.
           </p>
         </label>
         <input

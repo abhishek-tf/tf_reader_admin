@@ -84,14 +84,25 @@ export default function BookFormScreen() {
               <span style={{ color: 'var(--line)' }}>/</span>
               <span>{editing ? 'Edit item' : 'New item'}</span>
             </div>
-            <h2 className="drawer-title">{editing ? 'Edit catalogue item' : 'New catalogue item'}</h2>
+            <h2 className="drawer-title">
+              {editing ? 'Edit catalogue item' : 'New catalogue item'}
+            </h2>
           </div>
-          <button type="button" className="modal-close" aria-label="Cancel and go back" onClick={handleCancel}>
+          <button
+            type="button"
+            className="modal-close"
+            aria-label="Cancel and go back"
+            onClick={handleCancel}
+          >
             <Icon name="close" />
           </button>
         </div>
         <div className="drawer-body">
-          <BookForm initialItem={editing ? record : null} onSaved={handleSaved} onCancel={handleCancel} />
+          <BookForm
+            initialItem={editing ? record : null}
+            onSaved={handleSaved}
+            onCancel={handleCancel}
+          />
         </div>
       </div>
     </div>
