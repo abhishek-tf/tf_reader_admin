@@ -1653,6 +1653,34 @@ h2 {
   background: var(--slate);
 }
 
+/* A publisher's tenant record (api/tenants.js): whether its own database connection is
+   reachable, and separately, whether it has its own vault key configured at all. Two
+   different facts about the same publisher, so HEALTHY/CONFIGURED both read as "good" but
+   stay two distinct values rather than one being read as an answer to the other's question. */
+.badge-HEALTHY,
+.badge-CONFIGURED {
+  background: var(--mint-subtle);
+  color: var(--mint-dark);
+}
+.badge-HEALTHY::before,
+.badge-CONFIGURED::before {
+  background: var(--mint-dark);
+}
+.badge-UNREACHABLE {
+  background: var(--coral-neutral);
+  color: var(--coral-dark);
+}
+.badge-UNREACHABLE::before {
+  background: var(--coral-dark);
+}
+.badge-NOT_CONFIGURED {
+  background: var(--surface-container-low);
+  color: var(--slate);
+}
+.badge-NOT_CONFIGURED::before {
+  background: var(--slate);
+}
+
 /* ── filter bar and pagination ───────────────────────────────────────────── */
 .filter-bar {
   display: flex;

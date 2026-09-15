@@ -16,10 +16,16 @@ import TenantConfirmModal from './TenantConfirmModal.jsx';
 function CurrentStatus({ loading, error, tenant }) {
   if (tenant) {
     return (
-      <p>
-        Database connection: <StatusBadge status={tenant.connectionHealth} /> &nbsp;&middot;&nbsp;
-        Encryption key: {tenant.vaultRef ? 'Configured' : "T&F's shared key"}
-      </p>
+      <div className="stack" style={{ gap: 'var(--space-xs)', marginBottom: 'var(--space-md)' }}>
+        <div className="detail-hero-meta">
+          <span className="muted small">Database connection</span>
+          <StatusBadge status={tenant.connectionHealth} />
+        </div>
+        <div className="detail-hero-meta">
+          <span className="muted small">Encryption key</span>
+          <StatusBadge status={tenant.vaultRef ? 'CONFIGURED' : 'NOT_CONFIGURED'} />
+        </div>
+      </div>
     );
   }
   if (loading) return <p className="muted">Loading current status...</p>;

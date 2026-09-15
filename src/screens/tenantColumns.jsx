@@ -40,7 +40,7 @@ export function buildTenantColumns() {
     {
       key: 'vaultRef',
       label: 'Vault key',
-      render: (row) => (row.vaultRef ? 'Configured' : "T&F's shared key"),
+      render: (row) => <StatusBadge status={row.vaultRef ? 'CONFIGURED' : 'NOT_CONFIGURED'} />,
     },
   ];
 }
