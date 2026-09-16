@@ -12,7 +12,7 @@ import { useInstitutionEntitlements } from './useInstitutionEntitlements.js';
 import { ENTITLEMENT_COLUMNS } from './entitlementColumns.jsx';
 import { getColumns } from './bookColumns.jsx';
 
-function KpiRow({ total, active, pending, accessibleItems }) {
+function KpiRow({ total, pending, accessibleItems }) {
   return (
     <div className="kpi-grid">
       <KpiCard
@@ -22,20 +22,13 @@ function KpiRow({ total, active, pending, accessibleItems }) {
         helper="every grant made"
       />
       <KpiCard
-        label="Active Entitlements"
-        value={active}
-        icon="check_circle"
-        accent
-        helper="currently in force"
-      />
-      <KpiCard
         label="Pending Requests"
         value={pending}
         icon="hourglass_top"
         helper="awaiting a super admin"
       />
       <KpiCard
-        label="Accessible Items"
+        label="Entitled Items"
         value={accessibleItems}
         icon="auto_stories"
         helper="books you can reach"
@@ -55,7 +48,6 @@ export default function InstitutionEntitlementsScreen({ institutionId }) {
   const e = useInstitutionEntitlements(institutionId);
 
   const pending = e.entitlements.filter((row) => row.status === 'PENDING');
-  const active = e.entitlements.filter((row) => row.status === 'ACTIVE').length;
 
   return (
     <div className="stack">
@@ -67,7 +59,6 @@ export default function InstitutionEntitlementsScreen({ institutionId }) {
 
       <KpiRow
         total={e.entitlements.length}
-        active={active}
         pending={pending.length}
         accessibleItems={e.books.length}
       />
