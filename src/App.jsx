@@ -20,6 +20,7 @@ import CollectionFormScreen from './screens/CollectionFormScreen.jsx';
 import CollectionItemsScreen from './screens/CollectionItemsScreen.jsx';
 import OperatorsAuditScreen from './screens/OperatorsAuditScreen.jsx';
 import OperatorFormScreen from './screens/OperatorFormScreen.jsx';
+import TenantsScreen from './screens/TenantsScreen.jsx';
 import NotFound from './screens/NotFound.jsx';
 
 // Which roles may use each route group, read from the same table SideMenu builds its links
@@ -35,6 +36,7 @@ const INSTITUTION_ROLES = rolesFor('/institutions');
 const SHELF_ROLES = rolesFor('/shelves');
 const ENTITLEMENT_ROLES = rolesFor('/entitlements');
 const OPERATOR_ROLES = rolesFor('/operators');
+const TENANT_ROLES = rolesFor('/tenants');
 
 /**
  * Resolves "/" to the signed-in operator's own landing page, instead of the fixed
@@ -208,6 +210,18 @@ export default function App() {
           <Route path=":adminUserId/edit" element={<OperatorFormScreen />} />
         </Route>
         <Route path="/audit" element={<Navigate to="/operators" replace />} />
+
+        {/* SUPER_ADMIN only, list-only: which publisher's data lives in which database, and
+            whether its encryption key vault is reachable. No create/edit flow, since the
+            backend has not shipped anything beyond a list endpoint for this yet. */}
+        <Route
+          path="/tenants"
+          element={
+            <RequireAuth roles={TENANT_ROLES}>
+              <TenantsScreen />
+            </RequireAuth>
+          }
+        />
 
         <Route path="*" element={<NotFound />} />
       </Route>

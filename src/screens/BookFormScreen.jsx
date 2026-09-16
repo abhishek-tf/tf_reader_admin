@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import BookForm from '../ui/BookForm.jsx';
 import Icon from '../ui/Icon.jsx';
@@ -11,10 +11,15 @@ import { getCatalogueItem } from '../api/catalogueItems.js';
  *
  * `/books/new` creates. `/books/:itemId/edit` edits.
  *
- * On create, BookForm saves metadata only; once that returns the newly created item, this
- * screen keeps rendering the same layout against it — still `/books/new`, not a redirect to
- * Edit — rather than switching to a different "now upload" screen. Saving again after that
- * (a metadata edit, not the original create) leaves the same way Edit's own save does.
+ * On create, BookForm saves metadata only (and uploads any staged content/cover inline, since
+ * it already holds those files); the moment that succeeds, this screen switches the address to
+ * `/books/{id}/edit` rather than staying on `/books/new`. That used to not happen — the screen
+ * kept rendering the same layout against the newly created item without ever changing the
+ * URL — but it meant a reload at any point after creation (including mid-upload) landed back
+ * on a blank `/books/new` with no memory of the item the backend already has. `/books/{id}/edit`
+ * already knows how to re-fetch that record and (via ContentUploadPanel) resume polling a
+ * `QUEUED`/`PROCESSING` upload on its own, so switching to it immediately reuses that instead
+ * of needing new persistence.
  *
  * Rendered through BooksScreen's own `<Outlet/>` (see App.jsx's nested `/books` routes), not
  * in place of it — so the table is still mounted underneath, and `.drawer-page`'s
@@ -35,8 +40,6 @@ export default function BookFormScreen() {
   const navigate = useNavigate();
   const { reload: reloadList } = useOutletContext() ?? {};
   const { record, loading, error, reload } = useRecord(getCatalogueItem, itemId);
-  const [createdItem, setCreatedItem] = useState(null);
-  const activeItem = editing ? record : createdItem;
 
   useEffect(() => () => reloadList?.(), [reloadList]);
 
@@ -61,10 +64,11 @@ export default function BookFormScreen() {
   }
 
   function handleSaved(saved) {
-    // The one save that must not leave: creating for the first time, which is what turns
-    // this same screen into the "now upload" state instead of navigating anywhere.
-    if (!editing && !createdItem && saved?.id) {
-      setCreatedItem(saved);
+    // Creating for the first time switches straight to /books/{id}/edit - see the doc comment
+    // above. Editing (a metadata save on an item that already existed) just closes the drawer,
+    // same as every other edit screen in this app.
+    if (!editing && saved?.id) {
+      navigate(`/books/${saved.id}/edit`, { replace: true });
       return;
     }
     navigate('/books');
@@ -80,14 +84,25 @@ export default function BookFormScreen() {
               <span style={{ color: 'var(--line)' }}>/</span>
               <span>{editing ? 'Edit item' : 'New item'}</span>
             </div>
-            <h2 className="drawer-title">{editing ? 'Edit catalogue item' : 'New catalogue item'}</h2>
+            <h2 className="drawer-title">
+              {editing ? 'Edit catalogue item' : 'New catalogue item'}
+            </h2>
           </div>
-          <button type="button" className="modal-close" aria-label="Cancel and go back" onClick={handleCancel}>
+          <button
+            type="button"
+            className="modal-close"
+            aria-label="Cancel and go back"
+            onClick={handleCancel}
+          >
             <Icon name="close" />
           </button>
         </div>
         <div className="drawer-body">
-          <BookForm initialItem={activeItem} onSaved={handleSaved} onCancel={handleCancel} />
+          <BookForm
+            initialItem={editing ? record : null}
+            onSaved={handleSaved}
+            onCancel={handleCancel}
+          />
         </div>
       </div>
     </div>

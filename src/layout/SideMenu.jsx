@@ -23,7 +23,7 @@ export const ENTRIES = [
   },
   {
     to: '/publishers',
-    label: 'Publishers',
+    label: { SUPER_ADMIN: 'Publishers', PUBLISHER_ADMIN: 'Profile' },
     icon: 'menu_book',
     roles: ['SUPER_ADMIN', 'PUBLISHER_ADMIN'],
   },
@@ -35,13 +35,13 @@ export const ENTRIES = [
   },
   {
     to: '/institutions',
-    label: 'Institutions',
+    label: { SUPER_ADMIN: 'Institutions', INSTITUTION_ADMIN: 'Profile' },
     icon: 'account_balance',
     roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN'],
   },
   {
     to: '/shelves',
-    label: 'Shelves',
+    label: 'Feed settings',
     icon: 'shelves',
     roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN'],
   },
@@ -49,9 +49,10 @@ export const ENTRIES = [
     to: '/entitlements',
     label: 'Entitlements',
     icon: 'verified_user',
-    roles: ['SUPER_ADMIN', 'INSTITUTION_ADMIN'],
+    roles: ['INSTITUTION_ADMIN'],
   },
   { to: '/operators', label: 'Operators & Audit Log', icon: 'badge', roles: ['SUPER_ADMIN'] },
+  { to: '/tenants', label: 'Tenants', icon: 'dns', roles: ['SUPER_ADMIN'] },
 ];
 
 // Where "/" sends a role the moment it signs in, and where NotAuthorized's "Go to Home" sends
@@ -66,6 +67,12 @@ const HOME_ROUTE = {
 
 export function homeRouteForRole(role) {
   return HOME_ROUTE[role] ?? '/login';
+}
+
+// An entry's label is a plain string, or an object keyed by role when the same page needs a
+// different name depending on who is looking at it (e.g. "Institutions" vs "Profile").
+function labelFor(entry, role) {
+  return typeof entry.label === 'string' ? entry.label : entry.label[role];
 }
 
 export default function SideMenu({ role, collapsed = false, onNavigate }) {
@@ -87,7 +94,7 @@ export default function SideMenu({ role, collapsed = false, onNavigate }) {
               {entry.soon ? (
                 <span className="side-soon" title="Not built yet">
                   {entry.icon ? <Icon name={entry.icon} className="side-icon" /> : null}
-                  {entry.label}
+                  {labelFor(entry, role)}
                 </span>
               ) : (
                 <NavLink
@@ -96,7 +103,7 @@ export default function SideMenu({ role, collapsed = false, onNavigate }) {
                   onClick={onNavigate}
                 >
                   {entry.icon ? <Icon name={entry.icon} className="side-icon" /> : null}
-                  {entry.label}
+                  {labelFor(entry, role)}
                 </NavLink>
               )}
             </li>

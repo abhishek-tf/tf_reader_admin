@@ -7,6 +7,10 @@ import { api, pageQuery } from './client.js';
 //
 //   Publisher       { id, code, name, status, description?, logoUrl?, itemCount?,
 //                     collectionCount?, createdAt? }
+//                     wokay-api.yaml's Publisher schema also lists vaultRef/connectionHealth,
+//                     but the backend's real PublisherView never serializes them - confirmed
+//                     spec/code drift, flagged back. Which database/key a publisher uses lives
+//                     on the separate Tenant shape in api/tenants.js, not here.
 //   PublisherWrite  { code, name, description?, logoUrl? }        code and name required
 //   PublisherPage   { items: Publisher[], page, size, total }     page is ZERO based
 //   StatusChange    { status, reason? }                           reason is max 500 chars

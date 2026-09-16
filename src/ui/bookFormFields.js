@@ -21,15 +21,11 @@ export const STATUS_OPTIONS = [
 // simply never listed here rather than shown disabled. `section` is presentation grouping
 // only ('imprint' | 'rights' | 'bibliographic') — it groups the drawer's field blocks and
 // does not touch validation, payload shape or ordering below.
+// publisherId is deliberately not in this list: BookForm.jsx renders it itself, as a
+// role-aware picker (a dropdown for SUPER_ADMIN, locked to the signed-in admin's own publisher
+// for PUBLISHER_ADMIN) rather than a free-text box anyone could type any id into. validate()
+// below still checks it the same way regardless of which UI produced the value.
 export const FIELDS = [
-  {
-    name: 'publisherId',
-    label: 'Publisher ID',
-    kind: 'text',
-    placeholder: 'pub_rtlg',
-    required: true,
-    section: 'imprint',
-  },
   {
     name: 'contentType',
     label: 'Content type',
@@ -46,9 +42,22 @@ export const FIELDS = [
     required: true,
     section: 'imprint',
   },
-  { name: 'title', label: 'Title', kind: 'text', maxLength: 300, required: true, section: 'bibliographic' },
+  {
+    name: 'title',
+    label: 'Title',
+    kind: 'text',
+    maxLength: 300,
+    required: true,
+    section: 'bibliographic',
+  },
   { name: 'subtitle', label: 'Subtitle', kind: 'text', maxLength: 300, section: 'bibliographic' },
-  { name: 'authors', label: 'Authors', kind: 'text', hint: 'Comma separated.', section: 'bibliographic' },
+  {
+    name: 'authors',
+    label: 'Authors',
+    kind: 'text',
+    hint: 'Comma separated.',
+    section: 'bibliographic',
+  },
   {
     name: 'editors',
     label: 'Editors',
@@ -81,7 +90,13 @@ export const FIELDS = [
     required: (form) => form.contentType === 'AUDIO',
     section: 'bibliographic',
   },
-  { name: 'subjects', label: 'Subjects', kind: 'text', hint: 'Comma separated.', section: 'bibliographic' },
+  {
+    name: 'subjects',
+    label: 'Subjects',
+    kind: 'text',
+    hint: 'Comma separated.',
+    section: 'bibliographic',
+  },
   {
     name: 'language',
     label: 'Language',
@@ -105,8 +120,20 @@ export const FIELDS = [
     inputType: 'date',
     section: 'bibliographic',
   },
-  { name: 'coverUrl', label: 'Cover URL', kind: 'text', inputType: 'url', section: 'bibliographic' },
-  { name: 'status', label: 'Status', kind: 'select', options: STATUS_OPTIONS, section: 'bibliographic' },
+  {
+    name: 'coverUrl',
+    label: 'Cover URL',
+    kind: 'text',
+    inputType: 'url',
+    section: 'bibliographic',
+  },
+  {
+    name: 'status',
+    label: 'Status',
+    kind: 'select',
+    options: STATUS_OPTIONS,
+    section: 'bibliographic',
+  },
 ];
 
 const ISBN_PATTERN = /^(97[89])?[0-9]{9}[0-9X]$/;

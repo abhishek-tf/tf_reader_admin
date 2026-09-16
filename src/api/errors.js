@@ -1,10 +1,14 @@
-// The eleven error codes from wokay-api.yaml. There are no others, so a handler for a
-// code not in this list is dead code.
+// The eleven error codes from wokay-api.yaml, plus FORBIDDEN_ROLE below: confirmed real
+// against the backend's own ErrorCode.java (the locally-checked contract copy just hadn't
+// caught up yet), and it's the only 403 the four tenant self-service endpoints
+// (api/tenants.js) ever return - never FORBIDDEN_SCOPE. A handler for any other code not in
+// this list is dead code.
 //
 // Switch on `code`, never on `message`. The message is written for a human and will change.
 export const ErrorCode = {
   UNAUTHENTICATED: 'UNAUTHENTICATED',
   FORBIDDEN_SCOPE: 'FORBIDDEN_SCOPE',
+  FORBIDDEN_ROLE: 'FORBIDDEN_ROLE',
   FORBIDDEN_INSTITUTION_MISMATCH: 'FORBIDDEN_INSTITUTION_MISMATCH',
   NO_ENTITLEMENT: 'NO_ENTITLEMENT',
   CONTENT_NOT_READY: 'CONTENT_NOT_READY',
@@ -21,6 +25,7 @@ export const ErrorCode = {
 const FRIENDLY = {
   UNAUTHENTICATED: 'Your session has ended. Please sign in again.',
   FORBIDDEN_SCOPE: 'You do not have permission to change this record.',
+  FORBIDDEN_ROLE: 'Your role does not allow this action.',
   FORBIDDEN_INSTITUTION_MISMATCH: 'That record belongs to a different institution.',
   NO_ENTITLEMENT: 'This institution is not entitled to that title.',
   CONTENT_NOT_READY: 'The file is still being processed. Try again shortly.',

@@ -433,9 +433,28 @@ h2 {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
+.head-brand-mark {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.head-logo {
+  height: 28px;
+  width: 28px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
 .head-name {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
   color: var(--carbon);
   font-weight: 700;
+}
+.head-name-sub {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 11px;
 }
 .head-right {
   display: flex;
@@ -994,6 +1013,20 @@ h2 {
 }
 .field-required {
   color: var(--accent);
+}
+/* A caution ahead of a hard-to-reverse edit (switching a publisher's database or encryption
+   key) - amber rather than the red .field-error/.badge-REVOKED tone, since this isn't a
+   mistake to correct, just a consequence worth reading before continuing. */
+.callout-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius);
+  background: var(--saffron-neutral);
+  color: var(--carbon);
+  font-size: 13px;
+  margin: 0 0 var(--space-sm);
 }
 .input-group {
   position: relative;
@@ -1650,6 +1683,34 @@ h2 {
   color: var(--slate);
 }
 .badge-ARCHIVED::before {
+  background: var(--slate);
+}
+
+/* A publisher's tenant record (api/tenants.js): whether its own database connection is
+   reachable, and separately, whether it has its own vault key configured at all. Two
+   different facts about the same publisher, so HEALTHY/CONFIGURED both read as "good" but
+   stay two distinct values rather than one being read as an answer to the other's question. */
+.badge-HEALTHY,
+.badge-CONFIGURED {
+  background: var(--mint-subtle);
+  color: var(--mint-dark);
+}
+.badge-HEALTHY::before,
+.badge-CONFIGURED::before {
+  background: var(--mint-dark);
+}
+.badge-UNREACHABLE {
+  background: var(--coral-neutral);
+  color: var(--coral-dark);
+}
+.badge-UNREACHABLE::before {
+  background: var(--coral-dark);
+}
+.badge-NOT_CONFIGURED {
+  background: var(--surface-container-low);
+  color: var(--slate);
+}
+.badge-NOT_CONFIGURED::before {
   background: var(--slate);
 }
 

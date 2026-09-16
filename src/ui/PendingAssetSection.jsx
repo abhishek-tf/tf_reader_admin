@@ -1,5 +1,6 @@
 import Icon from './Icon.jsx';
 import IngestStateBadge from './IngestStateBadge.jsx';
+import { useToast } from './ToastContext.jsx';
 
 /**
  * The content file and cover picked before a book exists to upload them to — Stitch's own
@@ -23,6 +24,28 @@ export default function PendingAssetSection({
   onChangeCover,
   disabled,
 }) {
+  const toast = useToast();
+
+  // Belt and suspenders around a plain "stash the File object" call: neither handler is
+  // expected to throw on a normal file selection, but a raw <input type="file"> onChange
+  // sits outside React's own render cycle, so an unexpected failure here has nowhere else to
+  // go. Surfacing it as a toast beats leaving the operator on a stuck, unresponsive picker.
+  function handleContentChange(event) {
+    try {
+      onChangeContent(event.target.files?.[0] ?? null);
+    } catch (error) {
+      toast.failed(error, 'Could not use that file. Try choosing it again.');
+    }
+  }
+
+  function handleCoverChange(event) {
+    try {
+      onChangeCover(event.target.files?.[0] ?? null);
+    } catch (error) {
+      toast.failed(error, 'Could not use that file. Try choosing it again.');
+    }
+  }
+
   return (
     <>
       <div className="drawer-section">
@@ -31,30 +54,27 @@ export default function PendingAssetSection({
           Current state: <IngestStateBadge state="NONE" />
         </p>
 
-        <label className="upload-dropzone" htmlFor="staged-content-file">
-          <Icon name="upload_file" style={{ fontSize: 28 }} />
-          <span className="upload-dropzone-text">
-            {contentFile ? (
-              contentFile.name
-            ) : (
-              <>
-                Drop a {contentType || 'content'} file here, or{' '}
-                <span className="upload-dropzone-browse">browse</span>
-              </>
-            )}
-          </span>
-          <p className="muted small">
-            Sent as {contentType || 'the chosen content type'}. Uploaded once the book is
-            created.
-          </p>
-        </label>
-        <input
-          id="staged-content-file"
-          type="file"
-          className="file-input-hidden"
-          disabled={disabled}
-          onChange={(event) => onChangeContent(event.target.files?.[0] ?? null)}
-        />
+        {/* Same "Choose file" + filename pattern as the cover picker below, not the big
+            dropzone-as-label treatment this used to have - see the file-select crash report
+            this was changed to fix. */}
+        <div className="cover-upload-choose">
+          <label className="btn upload-choose-btn" htmlFor="staged-content-file">
+            Choose file
+          </label>
+          <input
+            id="staged-content-file"
+            type="file"
+            className="file-input-hidden"
+            disabled={disabled}
+            onChange={handleContentChange}
+          />
+          <span className="muted small">{contentFile ? contentFile.name : 'No file chosen'}</span>
+        </div>
+        <p className="muted small">
+          Sent as {contentType || 'the chosen content type'}. Uploaded once the book is created.
+          Unlike the fields above, a chosen file is not kept if this page reloads - you would need
+          to choose it again.
+        </p>
       </div>
 
       <div className="drawer-section">
@@ -65,7 +85,9 @@ export default function PendingAssetSection({
           </div>
           <div className="cover-upload-body">
             <span className="cover-upload-title">Upload cover image</span>
-            <p className="muted small">JPEG, PNG or WebP, up to 5 MB.</p>
+            <p className="muted small">
+              JPEG, PNG or WebP, up to 5 MB. Not kept if this page reloads.
+            </p>
             <div className="cover-upload-choose">
               <label className="btn upload-choose-btn" htmlFor="staged-cover-file">
                 Choose file
@@ -76,7 +98,7 @@ export default function PendingAssetSection({
                 accept="image/*"
                 className="file-input-hidden"
                 disabled={disabled}
-                onChange={(event) => onChangeCover(event.target.files?.[0] ?? null)}
+                onChange={handleCoverChange}
               />
               <span className="muted small">{coverFile ? coverFile.name : 'No file chosen'}</span>
             </div>

@@ -1,56 +1,26 @@
-import { useState } from 'react';
-import TextField from './TextField.jsx';
-import SelectField from './SelectField.jsx';
+import { useRef, useState } from 'react';
 import FormActions from './FormActions.jsx';
 import BookCollectionPicker from './BookCollectionPicker.jsx';
 import PendingAssetSection from './PendingAssetSection.jsx';
 import ContentUploadPanel from './ContentUploadPanel.jsx';
 import CoverUploadPanel from './CoverUploadPanel.jsx';
+import PublisherField from './PublisherField.jsx';
+import BookFormField from './BookFormField.jsx';
 import {
   createCatalogueItem,
   updateCatalogueItem,
   uploadCatalogueItemContent,
   uploadCatalogueItemCover,
 } from '../api/catalogueItems.js';
+import { useAuth } from '../auth/AuthContext.jsx';
 import { useToast } from './ToastContext.jsx';
+import { useBeforeUnloadWarning } from './useBeforeUnloadWarning.js';
+import { useDraftForm } from './useDraftForm.js';
+import { usePublisherOptions } from './usePublisherOptions.js';
 import { FIELDS, toFormState, validate, buildPayload, isIsbnLocked } from './bookFormFields.js';
 
 const IMPRINT_FIELDS = FIELDS.filter((field) => field.section === 'imprint');
 const BIBLIOGRAPHIC_FIELDS = FIELDS.filter((field) => field.section === 'bibliographic');
-const PUBLISHER_FIELD = IMPRINT_FIELDS.find((field) => field.name === 'publisherId');
-const TIER_FIELDS = IMPRINT_FIELDS.filter((field) => field.name !== 'publisherId');
-
-function Field({ field, form, errors, saving, isbnLocked, onChange }) {
-  if (field.showIf && !field.showIf(form)) return null;
-
-  const required =
-    typeof field.required === 'function' ? field.required(form) : Boolean(field.required);
-
-  const shared = {
-    label: field.label,
-    name: field.name,
-    value: form[field.name],
-    onChange,
-    error: errors[field.name],
-    disabled: saving || (field.lockOnceSet && isbnLocked),
-    required,
-    compact: true,
-  };
-
-  if (field.kind === 'select') {
-    return <SelectField {...shared} options={field.options} />;
-  }
-  return (
-    <TextField
-      {...shared}
-      type={field.inputType}
-      placeholder={field.placeholder}
-      hint={field.hint}
-      multiline={field.multiline}
-      maxLength={field.maxLength}
-    />
-  );
-}
 
 /**
  * Create and edit, in one form. `initialItem` is null for create, or the row from the list
@@ -65,12 +35,30 @@ function Field({ field, form, errors, saving, isbnLocked, onChange }) {
  */
 export default function BookForm({ initialItem, onSaved, onCancel }) {
   const toast = useToast();
+  const { user } = useAuth();
   const isEditing = Boolean(initialItem?.id);
   const isbnLocked = isEditing && isIsbnLocked(initialItem);
 
-  const [form, setForm] = useState(() => toFormState(initialItem));
+  // A reload mid-fill restores from here instead of coming back blank - see useDraftForm.js.
+  // Only for create: an edit's data already comes from the server, so there's nothing to draft
+  // and nothing this key should ever hold while editing.
+  const [form, setForm, clearDraft] = useDraftForm(!isEditing, () => {
+    const initial = toFormState(initialItem);
+    // A PUBLISHER_ADMIN can only ever create/edit their own publisher's items, so this fills
+    // itself in rather than asking them to find and type their own id - see PublisherField.
+    if (!isEditing && user.role === 'PUBLISHER_ADMIN') initial.publisherId = user.scopePublisherId;
+    return initial;
+  });
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
+  // A PUBLISHER_ADMIN's picker is locked to their own scope and never shows this list, so this
+  // skips the request entirely for that role.
+  const publisherOptions = usePublisherOptions(user.role === 'SUPER_ADMIN');
+  // Captured once, from the form's own starting values (a restored draft counts as "starting",
+  // not "changed") - compared against on every render to decide whether the beforeunload guard
+  // below should fire. Recomputing the JSON string each render is wasted work, not wrong work:
+  // this form is small enough that it doesn't matter.
+  const initialFormSnapshot = useRef(JSON.stringify(form)).current;
   // True from the moment publisherId changes until BookCollectionPicker's own prune has run
   // against it. Submit must stay blocked for that whole stretch - Save clicked before it
   // settles would still send whatever collection id was picked under the previous publisher.
@@ -80,6 +68,14 @@ export default function BookForm({ initialItem, onSaved, onCancel }) {
   // that.
   const [stagedContent, setStagedContent] = useState(null);
   const [stagedCover, setStagedCover] = useState(null);
+
+  // Typed metadata is already protected by useDraftForm's autosave above - this guard is for
+  // what that can't cover: a staged file (never persistable across a reload) or a save/upload
+  // already in flight. Cleared automatically once nothing has changed from what the form
+  // started with, so closing an untouched or already-saved form never prompts.
+  const isDirty =
+    JSON.stringify(form) !== initialFormSnapshot || Boolean(stagedContent) || Boolean(stagedCover);
+  useBeforeUnloadWarning(isDirty || saving);
 
   function change(name, value) {
     setForm((current) => ({ ...current, [name]: value }));
@@ -141,6 +137,7 @@ export default function BookForm({ initialItem, onSaved, onCancel }) {
       toast.saved(isEditing ? 'Book updated.' : 'Book created.');
       const finalSaved =
         !isEditing && (stagedContent || stagedCover) ? await uploadStagedAssets(saved) : saved;
+      if (!isEditing) clearDraft();
       onSaved(finalSaved);
     } catch (error) {
       if (error.isValidation) {
@@ -157,6 +154,11 @@ export default function BookForm({ initialItem, onSaved, onCancel }) {
 
   const fieldProps = { form, errors, saving, isbnLocked, onChange: change };
 
+  function handleCancel() {
+    if (!isEditing) clearDraft();
+    onCancel();
+  }
+
   return (
     <form onSubmit={handleSubmit} noValidate>
       {errors.form ? (
@@ -167,10 +169,17 @@ export default function BookForm({ initialItem, onSaved, onCancel }) {
 
       <div className="drawer-section">
         <h3 className="drawer-section-title">Imprint &amp; rights</h3>
-        <Field field={PUBLISHER_FIELD} {...fieldProps} />
+        <PublisherField
+          user={user}
+          form={form}
+          errors={errors}
+          saving={saving}
+          publisherOptions={publisherOptions}
+          onChange={change}
+        />
         <div className="field-grid-2">
-          {TIER_FIELDS.map((field) => (
-            <Field key={field.name} field={field} {...fieldProps} />
+          {IMPRINT_FIELDS.map((field) => (
+            <BookFormField key={field.name} field={field} {...fieldProps} />
           ))}
         </div>
         <BookCollectionPicker
@@ -185,7 +194,7 @@ export default function BookForm({ initialItem, onSaved, onCancel }) {
       <div className="drawer-section">
         <h3 className="drawer-section-title">Bibliographic metadata</h3>
         {BIBLIOGRAPHIC_FIELDS.map((field) => (
-          <Field key={field.name} field={field} {...fieldProps} />
+          <BookFormField key={field.name} field={field} {...fieldProps} />
         ))}
       </div>
 
@@ -216,7 +225,7 @@ export default function BookForm({ initialItem, onSaved, onCancel }) {
 
       <div className="drawer-footer" style={{ margin: '0 calc(-1 * var(--space-xl))' }}>
         <FormActions
-          onCancel={onCancel}
+          onCancel={handleCancel}
           saving={saving}
           disabled={collectionsBusy}
           saveLabel={isEditing ? 'Save' : 'Create'}

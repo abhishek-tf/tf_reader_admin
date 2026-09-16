@@ -7,21 +7,26 @@ import { EntitlementKpiRow, EntitlementFilters } from './EntitlementListControls
 
 /** Everything shown once an institution is picked: the institution switcher, its KPI row,
  * filters, ledger table, pager, and activity log. Split out of EntitlementsAdminScreen so that
- * component stays a plain set of handlers, not a second place JSX branches accumulate. */
-export default function EntitlementLedgerPanel({ e, columns }) {
+ * component stays a plain set of handlers, not a second place JSX branches accumulate.
+ *
+ * `showInstitutionPicker` is false when the caller already fixes the institution (the
+ * Institution Detail page, via `useEntitlements(institutionId)`) — there's nothing to switch. */
+export default function EntitlementLedgerPanel({ e, columns, showInstitutionPicker = true }) {
   return (
     <>
-      <Card>
-        <SelectField
-          label="Institution"
-          name="institutionId"
-          compact
-          value={e.institutionId}
-          onChange={(_name, value) => e.selectInstitution(value)}
-          options={e.institutionPicker.list.map((inst) => ({ value: inst.id, label: inst.name }))}
-          placeholder="Choose an institution"
-        />
-      </Card>
+      {showInstitutionPicker ? (
+        <Card>
+          <SelectField
+            label="Institution"
+            name="institutionId"
+            compact
+            value={e.institutionId}
+            onChange={(_name, value) => e.selectInstitution(value)}
+            options={e.institutionPicker.list.map((inst) => ({ value: inst.id, label: inst.name }))}
+            placeholder="Choose an institution"
+          />
+        </Card>
+      ) : null}
 
       <EntitlementKpiRow kpis={e.kpis} />
       <EntitlementFilters e={e} />

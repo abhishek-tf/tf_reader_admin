@@ -7,6 +7,8 @@ import Card from '../ui/Card.jsx';
 import Button from '../ui/Button.jsx';
 import Icon from '../ui/Icon.jsx';
 import { getPublisher } from '../api/publishers.js';
+import { useAuth } from '../auth/AuthContext.jsx';
+import PublisherDatabaseVaultSection from './PublisherDatabaseVaultSection.jsx';
 
 // Same rule as the publishers table's row avatar: up to three letters from the code, since a
 // code is always present and short where a name is neither.
@@ -17,6 +19,7 @@ function initialsOf(code) {
 export default function PublisherDetailScreen() {
   const { publisherId } = useParams();
   const location = useLocation();
+  const { user } = useAuth();
 
   const [publisher, setPublisher] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -78,6 +81,11 @@ export default function PublisherDetailScreen() {
     return null;
   }
 
+  // Reading and writing a publisher's tenant record share the same rule on the backend now.
+  const canAccessTenant =
+    user.role === 'SUPER_ADMIN' ||
+    (user.role === 'PUBLISHER_ADMIN' && user.scopePublisherId === publisher.id);
+
   return (
     <div className="stack">
       <Card>
@@ -124,6 +132,8 @@ export default function PublisherDetailScreen() {
         </div>
         <PublisherStatusActions publisher={publisher} onChanged={setPublisher} />
       </Card>
+
+      <PublisherDatabaseVaultSection publisherId={publisher.id} canAccess={canAccessTenant} />
 
       <div id="collections">
         <PublisherCollections publisherId={publisher.id} />
