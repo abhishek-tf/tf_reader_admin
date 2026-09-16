@@ -433,9 +433,28 @@ h2 {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
+.head-brand-mark {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.head-logo {
+  height: 28px;
+  width: 28px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
 .head-name {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
   color: var(--carbon);
   font-weight: 700;
+}
+.head-name-sub {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 11px;
 }
 .head-right {
   display: flex;

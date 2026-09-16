@@ -4,14 +4,10 @@ import Card from '../ui/Card.jsx';
 import Button from '../ui/Button.jsx';
 import StatusBadge from '../ui/StatusBadge.jsx';
 import PageHeader from '../ui/PageHeader.jsx';
-import DataTable from '../ui/DataTable.jsx';
 import DashboardStatStrip from '../ui/DashboardStatStrip.jsx';
 import RouteErrorBoundary from '../ui/RouteErrorBoundary.jsx';
 import { InstitutionsDecoration } from '../ui/pageDecorations.jsx';
 import { useInstitutionAdminDashboard } from './useInstitutionAdminDashboard.js';
-import { useInstitutionEntitlements } from './useInstitutionEntitlements.js';
-import { ENTITLEMENT_COLUMNS } from './entitlementColumns.jsx';
-import { getColumns } from './bookColumns.jsx';
 import DashboardLoadState from './DashboardLoadState.jsx';
 
 function initialsOf(code) {
@@ -19,22 +15,21 @@ function initialsOf(code) {
 }
 
 /**
- * An INSTITUTION_ADMIN's own view of the Institutions page: their one institution, not a
- * catalogue of every institution in the system. There's nothing to browse or filter, so this is
- * a purpose-built screen rather than the SUPER_ADMIN catalogue table scaled down to one row —
- * see InstitutionCatalogueScreen.jsx for that. Entitlements, and the books they resolve to, are
- * both shown read-only here (approve/reject is SUPER_ADMIN only).
+ * An INSTITUTION_ADMIN's own profile page: their one institution, not a catalogue of every
+ * institution in the system. There's nothing to browse or filter, so this is a purpose-built
+ * screen rather than the SUPER_ADMIN catalogue table scaled down to one row — see
+ * InstitutionCatalogueScreen.jsx for that. Entitlements live on their own page (see the
+ * "Entitlements" sidebar entry) rather than here.
  */
 export default function MyInstitutionScreen({ institutionId }) {
   const { loading, error, data, reload } = useInstitutionAdminDashboard(institutionId);
-  const entitlements = useInstitutionEntitlements(institutionId);
   const location = useLocation();
 
   return (
     <div className="stack">
       <PageHeader
         title="Your institution"
-        subtitle="Who you are, your entitlements, and your curated shelves."
+        subtitle="Who you are and your curated shelves."
         decoration={<InstitutionsDecoration />}
       />
 
@@ -84,52 +79,9 @@ export default function MyInstitutionScreen({ institutionId }) {
                 value: data.institution.summary?.accessibleItemCount ?? '—',
                 helper: 'across active grants',
               },
-              { label: 'Active Entitlements', value: data.activeEntitlements },
               { label: 'Catalogue Version', value: data.institution.catalogueVersion },
-              {
-                label: 'Pending Requests',
-                value: data.pendingEntitlements.length,
-                helper: 'awaiting a super admin',
-                highlight: data.pendingEntitlements.length > 0,
-              },
             ]}
           />
-
-          <Card>
-            <div className="detail-section-title">
-              <h2>Your entitlements</h2>
-            </div>
-            <DataTable
-              columns={ENTITLEMENT_COLUMNS}
-              rows={entitlements.entitlements}
-              loading={entitlements.loadingEntitlements}
-              error={entitlements.entitlementsError}
-              emptyMessage="No entitlements have been granted to your institution yet."
-              onRetry={entitlements.reload}
-            />
-          </Card>
-
-          <Card>
-            <div className="detail-section-title">
-              <h2>Items you're entitled to</h2>
-            </div>
-            {entitlements.unresolvedItemCount > 0 ? (
-              <p className="muted small">
-                {entitlements.unresolvedItemCount} item-level entitlement
-                {entitlements.unresolvedItemCount === 1 ? '' : 's'} can&apos;t be shown here yet -
-                ask the platform team to check on this. Books reached through a publisher or
-                collection grant are unaffected and still listed below.
-              </p>
-            ) : null}
-            <DataTable
-              columns={getColumns(entitlements.toggleExpand)}
-              rows={entitlements.books}
-              loading={entitlements.loadingEntitlements || entitlements.loadingBooks}
-              error={entitlements.booksError}
-              emptyMessage="No books are reachable through your institution's entitlements yet."
-              onRetry={entitlements.reload}
-            />
-          </Card>
         </>
       ) : null}
 

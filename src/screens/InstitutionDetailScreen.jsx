@@ -5,8 +5,8 @@ import Card from '../ui/Card.jsx';
 import Button from '../ui/Button.jsx';
 import StatusBadge from '../ui/StatusBadge.jsx';
 import InstitutionSummaryPanel from './InstitutionSummaryPanel.jsx';
+import InstitutionEntitlementsPanel from './InstitutionEntitlementsPanel.jsx';
 import { useInstitutionEntitlements } from './useInstitutionEntitlements.js';
-import { ENTITLEMENT_COLUMNS } from './entitlementColumns.jsx';
 import { getColumns } from './bookColumns.jsx';
 import { getInstitution } from '../api/institution.js';
 
@@ -17,9 +17,10 @@ function initialsOf(code) {
 }
 
 /**
- * One institution's own page: who they are, their entitlements, and the books those
- * entitlements resolve to. Reached by clicking an institution's name on the list, replacing
- * what used to be an inline summary card at the bottom of that same list.
+ * One institution's own page: who they are, their entitlements ledger (grant, approve, reject,
+ * amend, revoke — see InstitutionEntitlementsPanel.jsx), and the books those entitlements
+ * resolve to. Reached by clicking an institution's name on the list, replacing what used to be
+ * an inline summary card at the bottom of that same list.
  */
 export default function InstitutionDetailScreen() {
   const { institutionId } = useParams();
@@ -118,19 +119,7 @@ export default function InstitutionDetailScreen() {
 
       <InstitutionSummaryPanel institution={institution} />
 
-      <Card>
-        <div className="detail-section-title">
-          <h2>Entitlements</h2>
-        </div>
-        <DataTable
-          columns={ENTITLEMENT_COLUMNS}
-          rows={entitlements.entitlements}
-          loading={entitlements.loadingEntitlements}
-          error={entitlements.entitlementsError}
-          emptyMessage="This institution holds no entitlements yet."
-          onRetry={entitlements.reload}
-        />
-      </Card>
+      <InstitutionEntitlementsPanel institutionId={institutionId} institution={institution} />
 
       <Card>
         <div className="detail-section-title">

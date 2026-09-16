@@ -16,22 +16,30 @@ const EMPTY_FILTERS = { q: '', scopeType: '', status: '' };
  * only way they can be real at all against this contract. That is also what keeps the KPI
  * counts honest: they are exact counts of this institution's own grants, not an estimate from
  * one page of them.
+ *
+ * `fixedInstitutionId`, when given, skips the institution picker entirely — the Institution
+ * Detail page already knows which institution it's showing and has no use for a dropdown to
+ * pick a different one.
  */
-export function useEntitlements() {
+export function useEntitlements(fixedInstitutionId) {
   const [institutionPicker, setInstitutionPicker] = useState({
     list: [],
-    loading: true,
-    selectedId: '',
+    loading: !fixedInstitutionId,
+    selectedId: fixedInstitutionId ?? '',
   });
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [page, setPage] = useState(0);
   const [entitlements, setEntitlements] = useState({ list: [], loading: false, error: null });
   const pageSize = 20;
 
+  // Runs once: a caller that starts fixed never later becomes un-fixed, so fixedInstitutionId
+  // is intentionally left out of the dependency array below.
   useEffect(() => {
+    if (fixedInstitutionId) return;
     listInstitutions({ status: 'ACTIVE', size: 100 })
       .then((loaded) => setInstitutionPicker((c) => ({ ...c, list: loaded.items, loading: false })))
       .catch(() => setInstitutionPicker((c) => ({ ...c, loading: false })));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const institutionId = institutionPicker.selectedId;

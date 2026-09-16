@@ -1,12 +1,10 @@
 import { useState } from 'react';
-import PageHeader from '../ui/PageHeader.jsx';
+import Card from '../ui/Card.jsx';
 import Button from '../ui/Button.jsx';
-import { useInFlightIds } from '../ui/entitlementFields.jsx';
 import { useToast } from '../ui/ToastContext.jsx';
-import { EntitlementsDecoration } from '../ui/pageDecorations.jsx';
+import { useInFlightIds } from '../ui/entitlementFields.jsx';
 import { useEntitlements } from './useEntitlements.js';
 import { buildEntitlementColumns } from './entitlementLedgerColumns.jsx';
-import EntitlementInstitutionChooser from './EntitlementInstitutionChooser.jsx';
 import EntitlementLedgerPanel from './EntitlementLedgerPanel.jsx';
 import EntitlementRevokeModal from './EntitlementRevokeModal.jsx';
 import EntitlementAmendModal from './EntitlementAmendModal.jsx';
@@ -19,13 +17,13 @@ import {
 } from '../api/entitlements.js';
 
 /**
- * A super admin's entitlements ledger — Stitch's "Entitlements" page and its "Grant
- * Entitlement Wizard", one institution at a time (see useEntitlements.js for why). Replaces
- * the old pending-only queue: this shows every grant regardless of status, with the actions
- * each status actually supports.
+ * The Institution Detail page's own entitlements ledger — one institution, already known from
+ * the route, so there's no picker to choose it (see EntitlementLedgerPanel's
+ * `showInstitutionPicker`). Split out of InstitutionDetailScreen so that page stays about the
+ * institution itself, not the full grant/approve/reject/amend/revoke flow this pulls in.
  */
-export default function EntitlementsAdminScreen() {
-  const e = useEntitlements();
+export default function InstitutionEntitlementsPanel({ institutionId, institution }) {
+  const ledger = useEntitlements(institutionId);
   const toast = useToast();
   const pendingIds = useInFlightIds();
   const [wizardOpen, setWizardOpen] = useState(false);
@@ -33,15 +31,13 @@ export default function EntitlementsAdminScreen() {
   const [amendTarget, setAmendTarget] = useState(null);
   const [revokeTarget, setRevokeTarget] = useState(null);
 
-  const institution = e.institutionPicker.list.find((inst) => inst.id === e.institutionId) ?? null;
-
   async function handleDecision(entitlement, status) {
     if (pendingIds.has(entitlement.id)) return;
     pendingIds.start(entitlement.id);
     try {
       await changeEntitlementStatus(entitlement.id, { status });
       toast.saved(status === 'ACTIVE' ? 'Approved.' : 'Rejected.');
-      e.reload();
+      ledger.reload();
     } catch (error) {
       toast.failed(error);
     } finally {
@@ -55,12 +51,12 @@ export default function EntitlementsAdminScreen() {
       await updateEntitlement(entitlementId, payload);
       toast.saved('Entitlement amended.');
       setAmendTarget(null);
-      e.reload();
+      ledger.reload();
     } catch (error) {
       if (error.isStale) {
         toast.failed('Somebody amended this grant first. Reloading the latest version.');
         setAmendTarget(null);
-        e.reload();
+        ledger.reload();
       } else {
         toast.failed(error);
       }
@@ -76,7 +72,7 @@ export default function EntitlementsAdminScreen() {
       await revokeEntitlement(target.id);
       toast.saved('Entitlement revoked.');
       setRevokeTarget(null);
-      e.reload();
+      ledger.reload();
     } catch (error) {
       toast.failed(error);
     } finally {
@@ -87,10 +83,10 @@ export default function EntitlementsAdminScreen() {
   async function handleGrantSubmit(payload) {
     setGranting(true);
     try {
-      await createEntitlement(e.institutionId, payload);
+      await createEntitlement(institutionId, payload);
       toast.saved('Entitlement granted.');
       setWizardOpen(false);
-      e.reload();
+      ledger.reload();
       return true;
     } catch (error) {
       toast.failed(error);
@@ -109,28 +105,16 @@ export default function EntitlementsAdminScreen() {
   });
 
   return (
-    <div className="stack">
-      <PageHeader
-        title="Entitlements"
-        subtitle="Manage institutional content licences, DRM concurrency caps, loan policies, and subscription tiers."
-        decoration={<EntitlementsDecoration />}
-        actions={
-          e.institutionId ? (
-            <Button variant="primary" icon="add" onClick={() => setWizardOpen(true)}>
-              Grant entitlement
-            </Button>
-          ) : null
-        }
-      />
-
-      {!e.institutionId ? (
-        <EntitlementInstitutionChooser
-          institutionPicker={e.institutionPicker}
-          onSelect={e.selectInstitution}
-        />
-      ) : (
-        <EntitlementLedgerPanel e={e} columns={columns} />
-      )}
+    <>
+      <Card>
+        <div className="detail-section-title">
+          <h2>Entitlements</h2>
+          <Button variant="primary" size="sm" icon="add" onClick={() => setWizardOpen(true)}>
+            Grant entitlement
+          </Button>
+        </div>
+        <EntitlementLedgerPanel e={ledger} columns={columns} showInstitutionPicker={false} />
+      </Card>
 
       <GrantEntitlementWizard
         open={wizardOpen}
@@ -152,6 +136,6 @@ export default function EntitlementsAdminScreen() {
         onCancel={() => setRevokeTarget(null)}
         saving={revokeTarget ? pendingIds.has(revokeTarget.id) : false}
       />
-    </div>
+    </>
   );
 }

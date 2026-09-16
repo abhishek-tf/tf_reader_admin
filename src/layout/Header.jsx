@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext.jsx';
 import Icon from '../ui/Icon.jsx';
 import Button from '../ui/Button.jsx';
+import logo from '../assets/reader-logo.png';
 
 // SUPER_ADMIN is not a phrase to show an operator.
 const ROLE_LABEL = {
@@ -150,7 +151,13 @@ export default function Header({ menuCollapsed = false, fullWidth = false, onTog
             <Icon name="menu" />
           </button>
         ) : null}
-        <span className="head-name">TF Reader admin console</span>
+        <span className="head-brand-mark">
+          <img src={logo} alt="" className="head-logo" />
+          <span className="head-name">
+            Nexus Admin Console
+            <span className="head-name-sub">by Taylor and Francis</span>
+          </span>
+        </span>
       </div>
       <div className="head-right">
         {user ? (
