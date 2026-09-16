@@ -2441,7 +2441,9 @@ h2 {
  * since matching this screen's own layout is the point. */
 .stat-strip {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  /* auto-fit rather than a fixed 4 columns: a strip with fewer stats (an institution admin's
+     3, say) fills the row instead of leaving an empty trailing column. */
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -2483,11 +2485,6 @@ h2 {
 .stat-strip-item-highlight .stat-strip-value,
 .stat-strip-item-highlight .stat-strip-helper {
   color: var(--coral-dark);
-}
-@media (max-width: 860px) {
-  .stat-strip {
-    grid-template-columns: repeat(2, 1fr);
-  }
 }
 @media (max-width: 480px) {
   .stat-strip {

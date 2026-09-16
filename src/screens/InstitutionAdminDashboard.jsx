@@ -80,11 +80,10 @@ export default function InstitutionAdminDashboard({ institutionId }) {
           <DashboardStatStrip
             stats={[
               {
-                label: 'Accessible Items',
+                label: 'Entitled Items',
                 value: data.institution.summary?.accessibleItemCount ?? '—',
                 helper: 'across active grants',
               },
-              { label: 'Active Entitlements', value: data.activeEntitlements },
               { label: 'Catalogue Version', value: data.institution.catalogueVersion },
               {
                 label: 'Pending Requests',
